@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASP NYC — Style Comparison</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f5f1e8;
+      color: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 48px 20px 60px;
+    }
+
+    .page-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #888;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .page-heading {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #0a0a0a;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .page-sub {
+      font-size: 15px;
+      color: #666;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    /* Style cards */
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .style-card {
+      background: #ffffff;
+      border: 1.5px solid #e0dbd0;
+      border-radius: 14px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .style-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border-color: #bbb5a8;
+    }
+
+    .card-preview {
+      height: 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Preview: modern minimal */
+    .preview-minimal {
+      background: #050505;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+    }
+    .prev-min-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #16a34a;
+      box-shadow: 0 0 8px #16a34a;
+    }
+    .prev-min-text { color: #fafafa; font-size: 14px; font-weight: 600; letter-spacing: -0.02em; }
+    .prev-min-sub { color: #52525b; font-size: 12px; margin-top: 1px; }
+    .prev-min-pips {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+    }
+    .prev-pip {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      font-size: 7px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .prev-pip.on { background: #2563eb; color: white; }
+    .prev-pip.off { background: #1a1a1a; color: #52525b; border: 1px solid #2a2a2a; }
+
+    /* Preview: signs */
+    .preview-signs {
+      background: #1b6b3a;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 12px;
+    }
+    .prev-sign-icon { font-size: 24px; }
+    .prev-sign-text {
+      font-family: 'Oswald', 'Impact', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .prev-sign-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 1px;
+      font-family: 'Oswald', 'Impact', sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .prev-sign-badge {
+      margin-left: auto;
+      background: #f5c518;
+      color: #7a5a00;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 3px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-family: 'Oswald', sans-serif;
+    }
+    .stripe-mini {
+      height: 4px;
+      background: repeating-linear-gradient(-45deg, #f5c518 0, #f5c518 6px, #124d29 6px, #124d29 12px);
+    }
+
+    /* Preview: subway */
+    .preview-subway {
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 12px;
+    }
+    .prev-sub-bullet {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: #00933C;
+      color: white;
+      font-size: 16px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .prev-sub-text { color: white; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+    .prev-sub-sub { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 1px; }
+    .prev-sub-circles {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+    }
+    .sub-c {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      font-size: 8px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Card body */
+    .card-body {
+      padding: 16px 18px 18px;
+    }
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .card-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0a0a0a;
+      letter-spacing: -0.02em;
+    }
+    .card-open {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.55;
+    }
+    .card-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: #777;
+      background: #f0ece2;
+      padding: 3px 9px;
+      border-radius: 100px;
+      letter-spacing: 0.02em;
+    }
+
+    /* Footer */
+    .page-footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid #e0dbd0;
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+    }
+
+    /* Tip */
+    .tip {
+      margin-top: 20px;
+      padding: 14px 16px;
+      background: #fffbe6;
+      border: 1px solid #f0d060;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #7a5a00;
+    }
+    .tip strong { font-weight: 600; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="page">
+
+  <div class="page-title">NYC Alternate Side Parking</div>
+  <h1 class="page-heading">Pick a visual style</h1>
+  <p class="page-sub">Open each demo to compare on your screen. Hit "⚡ Toggle state" in each to see what it looks like when parking is in effect.</p>
+
+  <div class="cards">
+
+    <!-- 1. Modern Minimal -->
+    <a class="style-card" href="modern-minimal.html" target="_blank">
+      <div class="card-preview preview-minimal">
+        <div class="prev-min-dot"></div>
+        <div>
+          <div class="prev-min-text">Not in effect</div>
+          <div class="prev-min-sub">Sun, May 10 · No cleaning today</div>
+        </div>
+        <div class="prev-min-pips">
+          <div class="prev-pip on">M</div>
+          <div class="prev-pip off">T</div>
+          <div class="prev-pip off">W</div>
+          <div class="prev-pip on">T</div>
+          <div class="prev-pip off">F</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-name">Modern Minimal</div>
+          <div class="card-open">Open ↗</div>
+        </div>
+        <div class="card-desc">Dark background, generous whitespace, blue accents. Clean and understated — like Linear or Vercel. Status is front and center, everything else steps back.</div>
+        <div class="card-tags">
+          <span class="tag">Dark mode</span>
+          <span class="tag">System font</span>
+          <span class="tag">Subtle</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- 2. NYC Signs -->
+    <a class="style-card" href="nyc-signs.html" target="_blank">
+      <div class="stripe-mini"></div>
+      <div class="card-preview preview-signs">
+        <div class="prev-sign-icon">🧹</div>
+        <div>
+          <div class="prev-sign-text">Alternate Side</div>
+          <div class="prev-sign-sub">New York City Parking</div>
+        </div>
+        <div class="prev-sign-badge">Not in effect</div>
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-name">NYC Street Signs</div>
+          <div class="card-open">Open ↗</div>
+        </div>
+        <div class="card-desc">Green sign boards, traffic-yellow accents, warm paper background. Feels distinctly New York. Schedule sections look like real parking sign plates.</div>
+        <div class="card-tags">
+          <span class="tag">Light mode</span>
+          <span class="tag">Oswald font</span>
+          <span class="tag">NYC branded</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- 3. Subway -->
+    <a class="style-card" href="subway.html" target="_blank">
+      <div class="card-preview preview-subway">
+        <div class="prev-sub-bullet">P</div>
+        <div>
+          <div class="prev-sub-text">Not in effect today</div>
+          <div class="prev-sub-sub">Sunday · No cleaning on Sundays</div>
+        </div>
+        <div class="prev-sub-circles">
+          <div class="sub-c" style="background:#EE352E;color:white">M</div>
+          <div class="sub-c" style="background:#F26522;color:white">T</div>
+          <div class="sub-c" style="background:#003DA5;color:white">T</div>
+          <div class="sub-c" style="background:#FCCC0A;color:#1a1200">F</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-name">Subway Map</div>
+          <div class="card-open">Open ↗</div>
+        </div>
+        <div class="card-desc">MTA-inspired design — cream background, dark station header, colored route circles for each cleaning day. Familiar to every New Yorker. Bold and graphic.</div>
+        <div class="card-tags">
+          <span class="tag">Cream/light</span>
+          <span class="tag">MTA colors</span>
+          <span class="tag">Graphic</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="tip">
+    <strong>Tip:</strong> Open all three in separate tabs and flip between them. Try the "⚡ Toggle state" button in each to see both the "safe" and "move your car!" states.
+  </div>
+
+  <div class="page-footer">
+    NYC Alternate Side Parking · Style comparison demos · 2026
+  </div>
+
+</div>
+</body>
+</html>

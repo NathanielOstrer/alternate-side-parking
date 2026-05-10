@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASP NYC — Street Sign Style</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #1b6b3a;
+      --green-dk: #124d29;
+      --green-bg: #eaf4ed;
+      --green-mid: #c5e3ce;
+      --yellow: #f5c518;
+      --yellow-bg: #fffbe6;
+      --yellow-dk: #7a5a00;
+      --red: #c0392b;
+      --red-bg: #fdf0ee;
+      --bg: #f0ebe0;
+      --card: #ffffff;
+      --border: #d8d2c6;
+      --border-dk: #bbb5a8;
+      --text: #1a1a1a;
+      --text-2: #5a5a5a;
+      --text-3: #8a8a8a;
+      --sign: 'Oswald', 'Impact', 'Arial Narrow', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Warning stripe ───────────────────────── */
+    .stripe {
+      height: 6px;
+      background: repeating-linear-gradient(
+        -45deg,
+        var(--yellow) 0px,
+        var(--yellow) 10px,
+        var(--green-dk) 10px,
+        var(--green-dk) 20px
+      );
+    }
+
+    /* ── Header ───────────────────────────────── */
+    .header {
+      background: var(--green);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .header-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 13px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo-group { display: flex; flex-direction: column; }
+    .logo {
+      font-family: var(--sign);
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .logo-sub {
+      font-family: var(--sign);
+      font-size: 10px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .demo-tag {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.2);
+      padding: 4px 9px;
+      border-radius: 3px;
+      font-family: var(--sign);
+    }
+    .broom { font-size: 18px; margin-right: 6px; }
+
+    /* ── Container ────────────────────────────── */
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 18px 16px 96px;
+    }
+
+    /* ── Search ───────────────────────────────── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 18px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      font-size: 16px;
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 13px 13px 13px 42px;
+      background: var(--card);
+      border: 2px solid var(--border-dk);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input:focus { border-color: var(--green); }
+
+    /* ── Status sign plate ────────────────────── */
+    .status-plate {
+      border-radius: 7px;
+      overflow: hidden;
+      margin-bottom: 14px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .plate-eyebrow {
+      background: rgba(0,0,0,0.25);
+      padding: 5px 14px;
+      font-family: var(--sign);
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+    .plate-body {
+      padding: 16px 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .plate-icon { font-size: 32px; line-height: 1; flex-shrink: 0; }
+    .plate-heading {
+      font-family: var(--sign);
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      line-height: 1.15;
+    }
+    .plate-detail {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 3px;
+    }
+
+    .plate-green { background: var(--green); }
+    .plate-red   { background: var(--red); }
+
+    /* ── Info tiles ───────────────────────────── */
+    .info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .info-tile {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--green);
+      border-radius: 5px;
+      padding: 11px 13px;
+    }
+    .tile-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 4px;
+    }
+    .tile-value {
+      font-family: var(--sign);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+
+    /* ── Sign-plate section ───────────────────── */
+    .sign-section { margin-bottom: 18px; }
+    .sign-header {
+      background: var(--green);
+      color: #fff;
+      padding: 8px 14px;
+      font-family: var(--sign);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border-radius: 5px 5px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .sign-body {
+      background: var(--card);
+      border: 1px solid var(--border-dk);
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+    }
+
+    /* ── Schedule rows ────────────────────────── */
+    .sched-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid #f0ebe0;
+    }
+    .sched-row:last-child { border-bottom: none; }
+
+    .arrow-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--green-bg);
+      border: 2px solid var(--green-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--green);
+      flex-shrink: 0;
+    }
+
+    .sched-info { flex: 1; }
+    .sched-side {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 3px;
+    }
+    .sched-days {
+      font-family: var(--sign);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
+    .time-badge {
+      font-family: var(--sign);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+      background: var(--green-bg);
+      border: 1px solid var(--green-mid);
+      padding: 5px 11px;
+      border-radius: 4px;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+
+    /* ── Day-of-week sign ─────────────────────── */
+    .dow-sign {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+    .dow-cell {
+      flex: 1;
+      text-align: center;
+      padding: 7px 2px;
+      border-radius: 3px;
+      font-family: var(--sign);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    .dow-cell.active {
+      background: var(--green);
+      color: #fff;
+    }
+    .dow-cell.inactive {
+      background: #ede8de;
+      color: #bbb;
+    }
+
+    /* ── Map ──────────────────────────────────── */
+    .map-frame {
+      border: 2px solid var(--border-dk);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .map-inner {
+      height: 160px;
+      background: #ddd9cf;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-road-h {
+      position: absolute;
+      top: 50%;
+      left: 0; right: 0;
+      height: 22px;
+      background: #c8c2b6;
+      transform: translateY(-50%);
+    }
+    .map-road-v {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 19px;
+      background: #c8c2b6;
+    }
+    .map-pin-outer {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .map-pin-label {
+      font-family: var(--sign);
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--green);
+      padding: 3px 9px;
+      border-radius: 3px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+    .map-pin-stem {
+      width: 2px;
+      height: 10px;
+      background: var(--green);
+    }
+    .map-pin-base {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    /* ── Suspensions ──────────────────────────── */
+    .susp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid #f0ebe0;
+    }
+    .susp-row:last-child { border-bottom: none; }
+    .susp-row.next { background: var(--yellow-bg); }
+
+    .susp-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .susp-right { display: flex; align-items: center; gap: 8px; }
+    .susp-date {
+      font-size: 13px;
+      color: var(--text-2);
+      font-variant-numeric: tabular-nums;
+    }
+    .susp-next-tag {
+      font-family: var(--sign);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--yellow-dk);
+      background: var(--yellow);
+      padding: 3px 8px;
+      border-radius: 3px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    /* ── Footer ───────────────────────────────── */
+    .footer-row {
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text-3);
+      text-align: center;
+      background: #f8f4eb;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Demo bar ─────────────────────────────── */
+    .demo-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 18px;
+      background: var(--green-dk);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 200;
+    }
+    .demo-bar-label {
+      font-family: var(--sign);
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .demo-nav { display: flex; gap: 8px; }
+    .demo-btn {
+      padding: 7px 14px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--sign);
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: all 0.15s;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      display: inline-block;
+    }
+    .demo-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    .demo-btn.toggle { background: var(--yellow); border-color: var(--yellow); color: var(--yellow-dk); }
+  </style>
+</head>
+<body>
+
+<div class="stripe"></div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-group">
+      <div class="logo"><span class="broom">🧹</span> Alternate Side</div>
+      <div class="logo-sub">New York City Parking</div>
+    </div>
+    <div class="demo-tag">Signs Demo</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" type="text" value="E 9th St, Manhattan" readonly>
+  </div>
+
+  <!-- Status plate -->
+  <div class="status-plate">
+    <div class="plate-body plate-green" id="plateBg">
+      <div class="plate-icon" id="plateIcon">✅</div>
+      <div>
+        <div class="plate-eyebrow" id="plateEyebrow">Today · Sunday, May 10, 2026</div>
+        <div class="plate-heading" id="plateHeading">Not in effect today</div>
+        <div class="plate-detail" id="plateDetail">No street cleaning on Sundays</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day-of-week visual -->
+  <div class="dow-sign">
+    <div class="dow-cell inactive">MON</div>
+    <div class="dow-cell inactive">TUE</div>
+    <div class="dow-cell inactive">WED</div>
+    <div class="dow-cell inactive">THU</div>
+    <div class="dow-cell inactive">FRI</div>
+    <div class="dow-cell inactive">SAT</div>
+    <div class="dow-cell inactive" id="dowSun" style="background:#f0ebe0;color:#ccc">SUN</div>
+  </div>
+
+  <!-- Info tiles -->
+  <div class="info-row">
+    <div class="info-tile">
+      <div class="tile-label">Next cleaning</div>
+      <div class="tile-value" id="tileDate">Mon, May 12</div>
+    </div>
+    <div class="info-tile">
+      <div class="tile-label">Time</div>
+      <div class="tile-value" id="tileTime">8:30–10 AM</div>
+    </div>
+  </div>
+
+  <!-- Schedule -->
+  <div class="sign-section">
+    <div class="sign-header">📋 Weekly Schedule — E 9th St</div>
+    <div class="sign-body">
+      <div class="sched-row">
+        <div class="arrow-circle">↑</div>
+        <div class="sched-info">
+          <div class="sched-side">North side</div>
+          <div class="sched-days">Mon &amp; Thu</div>
+        </div>
+        <div class="time-badge">8:30–10AM</div>
+      </div>
+      <div class="sched-row">
+        <div class="arrow-circle">↓</div>
+        <div class="sched-info">
+          <div class="sched-side">South side</div>
+          <div class="sched-days">Tue &amp; Fri</div>
+        </div>
+        <div class="time-badge">8:30–10AM</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="sign-section">
+    <div class="sign-header">📍 Location</div>
+    <div class="map-frame">
+      <div class="map-inner">
+        <div class="map-road-h"></div>
+        <div class="map-road-v" style="left:32%"></div>
+        <div class="map-road-v" style="left:62%"></div>
+        <div class="map-pin-outer">
+          <div class="map-pin-label">E 9th St</div>
+          <div class="map-pin-stem"></div>
+          <div class="map-pin-base"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suspensions -->
+  <div class="sign-section">
+    <div class="sign-header">🚫 Suspension Calendar · 2026</div>
+    <div class="sign-body">
+      <div class="susp-row next">
+        <span class="susp-name">Memorial Day</span>
+        <div class="susp-right">
+          <span class="susp-date">Mon, May 25</span>
+          <span class="susp-next-tag">Next</span>
+        </div>
+      </div>
+      <div class="susp-row"><span class="susp-name">Juneteenth</span><span class="susp-date">Fri, Jun 19</span></div>
+      <div class="susp-row"><span class="susp-name">Independence Day</span><span class="susp-date">Sat, Jul 4</span></div>
+      <div class="susp-row"><span class="susp-name">Labor Day</span><span class="susp-date">Mon, Sep 7</span></div>
+      <div class="susp-row"><span class="susp-name">Columbus Day</span><span class="susp-date">Mon, Oct 12</span></div>
+      <div class="susp-row"><span class="susp-name">Election Day</span><span class="susp-date">Tue, Nov 3</span></div>
+      <div class="susp-row"><span class="susp-name">Veterans Day</span><span class="susp-date">Wed, Nov 11</span></div>
+      <div class="susp-row"><span class="susp-name">Thanksgiving</span><span class="susp-date">Thu, Nov 26</span></div>
+      <div class="susp-row"><span class="susp-name">Christmas Day</span><span class="susp-date">Fri, Dec 25</span></div>
+      <div class="footer-row">Data via NYC Open Data · DOT · 2026</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="demo-bar">
+  <span class="demo-bar-label">Demo</span>
+  <div class="demo-nav">
+    <button class="demo-btn toggle" onclick="toggleState()">⚡ Toggle</button>
+    <a class="demo-btn" href="modern-minimal.html">‹ Minimal</a>
+    <a class="demo-btn" href="subway.html">Subway ›</a>
+  </div>
+</div>
+
+<script>
+  let inEffect = false;
+  function toggleState() {
+    inEffect = !inEffect;
+    const bg = document.getElementById('plateBg');
+    const icon = document.getElementById('plateIcon');
+    const heading = document.getElementById('plateHeading');
+    const detail = document.getElementById('plateDetail');
+    const tileDate = document.getElementById('tileDate');
+    const tileTime = document.getElementById('tileTime');
+
+    if (inEffect) {
+      bg.className = 'plate-body plate-red';
+      icon.textContent = '⚠️';
+      heading.textContent = 'In effect · Move your car';
+      detail.textContent = 'North side · Ends 10:00 AM today';
+      tileDate.textContent = 'Ends 10:00 AM';
+      tileTime.textContent = 'N. side today';
+    } else {
+      bg.className = 'plate-body plate-green';
+      icon.textContent = '✅';
+      heading.textContent = 'Not in effect today';
+      detail.textContent = 'No street cleaning on Sundays';
+      tileDate.textContent = 'Mon, May 12';
+      tileTime.textContent = '8:30–10 AM';
+    }
+  }
+</script>
+</body>
+</html>

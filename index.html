@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1b6b3a">
+  <meta name="description" content="NYC Alternate Side Parking — check your street's cleaning schedule and suspension days">
+  <title>Alternate Side Parking · NYC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css">
+  <style>
+    :root {
+      --green:         #1b6b3a;
+      --green-dk:      #124d29;
+      --green-lt:      #eaf4ed;
+      --green-mid:     #b8dcc4;
+      --green-hover:   #165830;
+      --yellow:        #f5c518;
+      --yellow-bg:     #fffce8;
+      --yellow-dk:     #7a5a00;
+      --yellow-border: #e8b800;
+      --amber:         #b45309;
+      --red:           #b91c1c;
+      --red-lt:        #fff0ef;
+      --red-border:    #f87171;
+      --bg:            #f0ebe0;
+      --bg-2:          #ebe6db;
+      --card:          #ffffff;
+      --border:        #d8d2c6;
+      --border-dk:     #b8b2a6;
+      --border-lt:     #e8e3d8;
+      --text:          #1a1a1a;
+      --text-2:        #555555;
+      --text-3:        #888888;
+      --text-4:        #aaaaaa;
+      --sign:          'Oswald', 'Impact', 'Arial Narrow', sans-serif;
+      --body:          -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      --mw:   480px;
+      --ph:   16px;
+      --rad:  6px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; font-family: inherit; }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .anim   { animation: fade-up 0.4s ease-out both; }
+    .anim-1 { animation-delay: 0.05s; }
+    .anim-2 { animation-delay: 0.12s; }
+    .anim-3 { animation-delay: 0.19s; }
+    .anim-4 { animation-delay: 0.26s; }
+    .anim-5 { animation-delay: 0.33s; }
+    .anim-6 { animation-delay: 0.40s; }
+    .anim-7 { animation-delay: 0.47s; }
+
+    /* ── Top stripe ─────────────────────────────────────────── */
+    .top-stripe {
+      height: 6px;
+      background: repeating-linear-gradient(
+        -45deg,
+        var(--yellow) 0px, var(--yellow) 10px,
+        var(--green-dk) 10px, var(--green-dk) 20px
+      );
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header {
+      background: var(--green);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+    }
+    .header-inner {
+      max-width: var(--mw);
+      margin: 0 auto;
+      padding: 12px var(--ph);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-wrap { display: flex; flex-direction: column; line-height: 1; }
+    .logo {
+      font-family: var(--sign);
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .logo-sub {
+      font-family: var(--sign);
+      font-size: 9px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+    .header-nav { display: flex; align-items: center; gap: 4px; }
+    .header-link {
+      font-family: var(--sign);
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      border-radius: 3px;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .header-link:hover { color: #fff; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
+
+    /* ── Container ──────────────────────────────────────────── */
+    .container {
+      max-width: var(--mw);
+      margin: 0 auto;
+      padding: 18px var(--ph) 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── Search ─────────────────────────────────────────────── */
+    .search-row { display: flex; gap: 8px; position: relative; z-index: 50; }
+    .search-field { flex: 1; position: relative; }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      font-size: 16px;
+      pointer-events: none;
+      line-height: 1;
+      z-index: 1;
+    }
+    .search-input {
+      width: 100%;
+      padding: 13px 13px 13px 40px;
+      background: var(--card);
+      border: 2px solid var(--border-dk);
+      border-radius: var(--rad);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -webkit-appearance: none;
+    }
+    .search-input::placeholder { color: var(--text-4); }
+    .search-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(27,107,58,0.12); }
+    .search-btn {
+      padding: 13px 18px;
+      background: var(--green);
+      border: none;
+      border-radius: var(--rad);
+      color: #fff;
+      font-family: var(--sign);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .search-btn:hover { background: var(--green-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(27,107,58,0.3); }
+    .search-btn:active { transform: translateY(0); box-shadow: none; }
+    .search-btn:disabled { opacity: 0.6; transform: none; box-shadow: none; cursor: default; }
+
+    /* Autocomplete dropdown */
+    .ac-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: var(--card);
+      border: 2px solid var(--green);
+      border-radius: var(--rad);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      z-index: 200;
+      overflow: hidden;
+    }
+    .ac-dropdown.open { display: block; }
+    .ac-item {
+      padding: 11px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-lt);
+      transition: background 0.1s;
+    }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover, .ac-item.ac-active { background: var(--green-lt); }
+    .ac-item-main { font-size: 14px; color: var(--text); font-weight: 500; }
+    .ac-item-sub  { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+    /* ── Status plate ───────────────────────────────────────── */
+    .status-plate {
+      border-radius: var(--rad);
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06);
+    }
+    .plate-body {
+      position: relative;
+      padding: 30px 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--green);
+      transition: background 0.35s;
+    }
+    .plate-body.red       { background: var(--red); }
+    .plate-body.suspended { background: var(--amber); }
+
+    .plate-eyebrow {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 5px 16px;
+      font-family: var(--sign);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      background: rgba(0,0,0,0.22);
+    }
+    .plate-icon {
+      font-size: 34px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .plate-body.red .plate-icon { animation: icon-pulse 1.6s ease-in-out infinite; }
+    @keyframes icon-pulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.1); }
+    }
+    .plate-text { flex: 1; min-width: 0; }
+    .plate-heading {
+      font-family: var(--sign);
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .plate-detail { font-size: 13px; color: rgba(255,255,255,0.72); margin-top: 3px; line-height: 1.4; }
+    .plate-badge {
+      flex-shrink: 0;
+      font-family: var(--sign);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 11px;
+      border-radius: 3px;
+      border: 2px solid rgba(255,255,255,0.35);
+      color: rgba(255,255,255,0.85);
+      transition: all 0.3s;
+    }
+    .plate-badge.urgent { background: var(--yellow); border-color: var(--yellow); color: var(--yellow-dk); }
+
+    /* ── Next suspension strip ──────────────────────────────── */
+    .susp-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--yellow-bg);
+      border: 1px solid var(--yellow-border);
+      border-radius: var(--rad);
+    }
+    .susp-strip-bullet {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--yellow);
+      border: 2px solid var(--yellow-dk);
+      flex-shrink: 0;
+    }
+    .susp-strip-text {
+      font-family: var(--sign);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--yellow-dk);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      flex: 1;
+      line-height: 1.3;
+    }
+    .susp-strip-count {
+      font-family: var(--sign);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--yellow-dk);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    /* ── DOW grid ───────────────────────────────────────────── */
+    .dow-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .dow-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 2px 6px;
+      border-radius: 4px;
+      font-family: var(--sign);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      user-select: none;
+    }
+    .dow-cell.cleaning { background: var(--green); color: #fff; }
+    .dow-cell.cleaning .dow-indicator { background: rgba(255,255,255,0.5); }
+    .dow-cell.off { background: var(--bg-2); color: var(--text-4); }
+    .dow-cell.today-marker { outline: 2px solid var(--yellow); outline-offset: 1px; }
+    .dow-indicator { width: 5px; height: 5px; border-radius: 50%; background: transparent; }
+
+    /* ── Info tiles ─────────────────────────────────────────── */
+    .tiles-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tile {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--green);
+      border-radius: 0 0 var(--rad) var(--rad);
+      padding: 11px 13px 12px;
+    }
+    .tile-label { font-size: 9px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 5px; }
+    .tile-value { font-family: var(--sign); font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: 0.01em; line-height: 1.15; }
+    .tile-sub   { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    /* ── Sign sections ──────────────────────────────────────── */
+    .sign-head {
+      background: var(--green);
+      color: #fff;
+      padding: 9px 14px;
+      font-family: var(--sign);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border-radius: var(--rad) var(--rad) 0 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sign-head-count {
+      margin-left: auto;
+      font-family: var(--sign);
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.06em;
+    }
+    .sign-body {
+      background: var(--card);
+      border: 1px solid var(--border-dk);
+      border-top: none;
+      border-radius: 0 0 var(--rad) var(--rad);
+      overflow: hidden;
+    }
+
+    /* ── Schedule rows ──────────────────────────────────────── */
+    .sched-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 14px;
+      border-bottom: 1px solid var(--border-lt);
+    }
+    .sched-row:last-child { border-bottom: none; }
+    .dir-circle {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--green-lt);
+      border: 2px solid var(--green-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--green);
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .sched-info { flex: 1; min-width: 0; }
+    .sched-side-lbl { font-size: 9px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 4px; }
+    .sched-days { font-family: var(--sign); font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; line-height: 1; }
+    .time-pill {
+      font-family: var(--sign);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+      background: var(--green-lt);
+      border: 1px solid var(--green-mid);
+      padding: 6px 12px;
+      border-radius: 4px;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .empty-msg {
+      padding: 18px 14px;
+      font-size: 14px;
+      color: var(--text-3);
+      font-style: italic;
+    }
+
+    /* ── Map ────────────────────────────────────────────────── */
+    #mapContainer { height: 200px; }
+    .map-footer-row {
+      padding: 9px 14px;
+      background: var(--bg-2);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .map-footer-text { font-family: var(--sign); font-size: 10px; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; }
+    .map-footer-link { font-family: var(--sign); font-size: 10px; color: var(--green); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+
+    /* Custom map marker */
+    .mcm { display: flex; flex-direction: column; align-items: center; }
+    .mcm-label {
+      font-family: var(--sign);
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--green);
+      padding: 4px 10px;
+      border-radius: 3px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      margin-bottom: 4px;
+    }
+    .mcm-stem { width: 2px; height: 10px; background: var(--green); }
+    .mcm-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+    /* ── Suspension calendar rows ───────────────────────────── */
+    .susp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-lt);
+      transition: background 0.1s;
+    }
+    .susp-row:last-child { border-bottom: none; }
+    .susp-row:hover { background: #fafaf6; }
+    .susp-row.next-up { background: var(--yellow-bg); }
+    .susp-row.next-up:hover { background: #fffce0; }
+    .susp-row.past { opacity: 0.45; }
+    .susp-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .susp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border-dk); flex-shrink: 0; }
+    .susp-row.next-up .susp-dot { background: var(--yellow-dk); border: 1.5px solid var(--yellow); }
+    .susp-name { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .susp-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .susp-date { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .susp-tag { font-family: var(--sign); font-size: 9px; font-weight: 700; color: var(--yellow-dk); background: var(--yellow); padding: 3px 8px; border-radius: 3px; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .footer { background: var(--green-dk); padding: 18px var(--ph); }
+    .footer-inner {
+      max-width: var(--mw);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .footer-logo { font-family: var(--sign); font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.6); letter-spacing: 0.1em; text-transform: uppercase; }
+    .footer-data { font-family: var(--sign); font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; text-transform: uppercase; }
+
+    /* ── Mobile ─────────────────────────────────────────────── */
+    @media (max-width: 420px) {
+      .plate-heading { font-size: 22px; }
+      .dow-cell { font-size: 10px; padding: 7px 1px 5px; }
+      .sched-days { font-size: 18px; }
+      .header-link:last-child { display: none; }
+    }
+    @media (max-width: 340px) { .susp-date { display: none; } }
+  </style>
+</head>
+<body>
+
+<div class="top-stripe"></div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-wrap">
+      <div class="logo">🧹 Alternate Side</div>
+      <div class="logo-sub">New York City Parking</div>
+    </div>
+    <nav class="header-nav">
+      <a class="header-link" href="#calendar">Suspensions</a>
+      <a class="header-link" href="#about">About</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="container">
+
+  <!-- Search -->
+  <div class="search-row anim anim-1">
+    <div class="search-field">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" type="text"
+        placeholder="Address or street name…"
+        autocomplete="off" spellcheck="false">
+      <div class="ac-dropdown" id="acDropdown"></div>
+    </div>
+    <button class="search-btn" id="searchBtn" onclick="doSearch()">Look&nbsp;Up</button>
+  </div>
+
+  <!-- Status plate -->
+  <div class="status-plate anim anim-2">
+    <div class="plate-body" id="plateBg">
+      <div class="plate-eyebrow" id="plateEyebrow"></div>
+      <div class="plate-icon" id="plateIcon">🔍</div>
+      <div class="plate-text">
+        <div class="plate-heading" id="plateHeading">Look up a street</div>
+        <div class="plate-detail" id="plateDetail">Enter a street or address above to check its schedule</div>
+      </div>
+      <div class="plate-badge" id="plateBadge">NYC</div>
+    </div>
+  </div>
+
+  <!-- Next suspension strip -->
+  <div class="susp-strip anim anim-3">
+    <div class="susp-strip-bullet"></div>
+    <div class="susp-strip-text" id="suspStripText">Loading suspension calendar…</div>
+    <div class="susp-strip-count" id="suspStripCount"></div>
+  </div>
+
+  <!-- DOW grid -->
+  <div class="dow-grid anim anim-3" id="dowGrid">
+    <div class="dow-cell off" data-dow="1"><span>MON</span><div class="dow-indicator"></div></div>
+    <div class="dow-cell off" data-dow="2"><span>TUE</span><div class="dow-indicator"></div></div>
+    <div class="dow-cell off" data-dow="3"><span>WED</span><div class="dow-indicator"></div></div>
+    <div class="dow-cell off" data-dow="4"><span>THU</span><div class="dow-indicator"></div></div>
+    <div class="dow-cell off" data-dow="5"><span>FRI</span><div class="dow-indicator"></div></div>
+    <div class="dow-cell off" data-dow="6"><span>SAT</span><div class="dow-indicator"></div></div>
+    <div class="dow-cell off today-marker" data-dow="0"><span>SUN</span><div class="dow-indicator" style="background:var(--yellow)"></div></div>
+  </div>
+
+  <!-- Tiles -->
+  <div class="tiles-row anim anim-4">
+    <div class="tile">
+      <div class="tile-label">Next cleaning</div>
+      <div class="tile-value" id="tileDate">—</div>
+      <div class="tile-sub" id="tileSide"> </div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Time</div>
+      <div class="tile-value" id="tileTime">—</div>
+      <div class="tile-sub" id="tileDur"> </div>
+    </div>
+  </div>
+
+  <!-- Weekly schedule -->
+  <div class="sign-section anim anim-5">
+    <div class="sign-head">
+      📋 Weekly Schedule
+      <span class="sign-head-count" id="streetNameHead">Enter a street</span>
+    </div>
+    <div class="sign-body" id="scheduleBody">
+      <div class="empty-msg">Search for a street to see its alternate side parking schedule.</div>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="sign-section anim anim-6">
+    <div class="sign-head">📍 Location</div>
+    <div class="sign-body">
+      <div id="mapContainer"></div>
+      <div class="map-footer-row">
+        <span class="map-footer-text" id="mapFooterText">New York City</span>
+        <a class="map-footer-link" id="mapFooterLink" href="#" target="_blank" rel="noopener">Open in Maps ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suspension calendar -->
+  <div class="sign-section anim anim-7" id="calendar">
+    <div class="sign-head">
+      🚫 Suspension Calendar
+      <span class="sign-head-count">2026</span>
+    </div>
+    <div class="sign-body" id="suspBody">
+      <div class="empty-msg">Loading…</div>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<footer class="footer" id="about">
+  <div class="footer-inner">
+    <div class="footer-logo">🧹 ASP · NYC</div>
+    <div class="footer-data">Data: NYC Open Data · NYC Planning GeoSearch · 2026</div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
+<script>
+/* ================================================================
+   DATA
+================================================================ */
+const SUSPENSIONS = [
+  // January
+  { name: "New Year's Day",                    date: "2026-01-01" },
+  { name: "Three Kings' Day",                  date: "2026-01-06" },
+  { name: "Martin Luther King Jr. Day",        date: "2026-01-19" },
+  // February
+  { name: "Lincoln's Birthday",                date: "2026-02-12" },
+  { name: "Presidents' Day / Lunar New Year's Eve", date: "2026-02-16" },
+  { name: "Lunar New Year",                    date: "2026-02-17" },
+  { name: "Ash Wednesday / Losar",             date: "2026-02-18" },
+  // March
+  { name: "Purim",                             date: "2026-03-03" },
+  { name: "Eid al-Fitr",                       date: "2026-03-20" },
+  { name: "Eid al-Fitr (2nd day)",             date: "2026-03-21" },
+  // April
+  { name: "Passover (1st Day) / Holy Thursday", date: "2026-04-02" },
+  { name: "Passover (2nd Day) / Good Friday",  date: "2026-04-03" },
+  { name: "Passover (7th Day)",                date: "2026-04-08" },
+  { name: "Passover (8th Day) / Orthodox Holy Thursday", date: "2026-04-09" },
+  { name: "Orthodox Good Friday",              date: "2026-04-10" },
+  // May
+  { name: "Solemnity of the Ascension",        date: "2026-05-14" },
+  { name: "Shavuot (1st Day)",                 date: "2026-05-22" },
+  { name: "Shavuot (2nd Day)",                 date: "2026-05-23" },
+  { name: "Memorial Day",                      date: "2026-05-25" },
+  { name: "Eid al-Adha",                       date: "2026-05-27" },
+  { name: "Eid al-Adha (2nd day)",             date: "2026-05-28" },
+  // June
+  { name: "Juneteenth",                        date: "2026-06-19" },
+  // July
+  { name: "Independence Day (observed)",       date: "2026-07-03" },
+  { name: "Independence Day",                  date: "2026-07-04" },
+  { name: "Tisha B'Av",                        date: "2026-07-23" },
+  // August
+  { name: "Feast of the Assumption",           date: "2026-08-15" },
+  // September
+  { name: "Labor Day",                         date: "2026-09-07" },
+  { name: "Rosh Hashanah (1st Day)",           date: "2026-09-12" },
+  { name: "Rosh Hashanah (2nd Day)",           date: "2026-09-13" },
+  { name: "Yom Kippur",                        date: "2026-09-21" },
+  { name: "Sukkot (1st Day)",                  date: "2026-09-26" },
+  { name: "Sukkot (2nd Day)",                  date: "2026-09-27" },
+  // October
+  { name: "Shemini Atzeret",                   date: "2026-10-03" },
+  { name: "Simchat Torah",                     date: "2026-10-04" },
+  { name: "Columbus Day / Indigenous Peoples' Day", date: "2026-10-12" },
+  // November
+  { name: "All Saints' Day",                   date: "2026-11-01" },
+  { name: "Election Day",                      date: "2026-11-03" },
+  { name: "Diwali",                            date: "2026-11-08" },
+  { name: "Veterans Day",                      date: "2026-11-11" },
+  { name: "Thanksgiving Day",                  date: "2026-11-26" },
+  // December
+  { name: "Feast of the Immaculate Conception", date: "2026-12-08" },
+  { name: "Christmas Day",                     date: "2026-12-25" },
+  // 2027
+  { name: "New Year's Day",                    date: "2027-01-01" },
+];
+
+const DAYS_FULL  = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function parseDateStr(s) {
+  // Parse "YYYY-MM-DD" as local date
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function fmtDate(dateStr) {
+  const d = parseDateStr(dateStr);
+  const opts = { weekday:'short', month:'short', day:'numeric' };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString('en-US', opts);
+}
+
+function daysUntil(dateStr) {
+  const now = parseDateStr(todayStr());
+  const tgt = parseDateStr(dateStr);
+  return Math.round((tgt - now) / 86400000);
+}
+
+function isSuspended(dateStr) {
+  return SUSPENSIONS.some(s => s.date === dateStr);
+}
+
+function getSuspensionName(dateStr) {
+  return SUSPENSIONS.find(s => s.date === dateStr)?.name ?? null;
+}
+
+function nextSuspension() {
+  const ts = todayStr();
+  return SUSPENSIONS.find(s => s.date >= ts) ?? null;
+}
+
+// "EAST 9 STREET" → "EAST    9 STREET" (5-char right-justified number)
+function normalizeStreetName(name) {
+  return name.toUpperCase().replace(/(\s*)(\d+)/, (_, sp, n) => n.padStart(5));
+}
+
+function parseSignDesc(desc) {
+  if (desc.includes('EXCEPT')) return { days: [], start: null, end: null };
+  const days = DAYS_FULL.filter(d => desc.includes(d));
+  const tm = desc.match(/(\d{1,2}(?::\d{2})?(?:AM|PM))-(\d{1,2}(?::\d{2})?(?:AM|PM))/);
+  return { days, start: tm?.[1] ?? null, end: tm?.[2] ?? null };
+}
+
+function toMin(t) {
+  if (!t) return null;
+  const m = t.match(/(\d{1,2})(?::(\d{2}))?([AP]M)/);
+  if (!m) return null;
+  let h = parseInt(m[1]), min = parseInt(m[2] || '0');
+  if (m[3] === 'PM' && h !== 12) h += 12;
+  if (m[3] === 'AM' && h === 12) h = 0;
+  return h * 60 + min;
+}
+
+function fmtTime(t) {
+  if (!t) return '';
+  return t.replace(/([AP]M)/, ' $1'); // narrow no-break space before AM/PM
+}
+
+function sideLabel(c) { return { N:'North', S:'South', E:'East', W:'West' }[c] ?? c; }
+function sideArrow(c) { return { N:'↑', S:'↓', E:'→', W:'←' }[c] ?? '·'; }
+
+function titleCase(s) {
+  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/* ================================================================
+   GEOCODING  (NYC Planning GeoSearch)
+================================================================ */
+const GEO = 'https://geosearch.planninglabs.nyc/v2';
+let acTimer = null;
+let acSuggestions = [];
+let acIdx = -1;
+
+async function fetchSuggestions(q) {
+  const r = await fetch(`${GEO}/autocomplete?text=${encodeURIComponent(q)}&size=6`);
+  return (await r.json()).features ?? [];
+}
+
+async function geocode(q) {
+  const r = await fetch(`${GEO}/search?text=${encodeURIComponent(q)}&size=1`);
+  const feats = (await r.json()).features ?? [];
+  return feats[0] ?? null;
+}
+
+/* ================================================================
+   OPEN DATA  (nfid-uabd)
+================================================================ */
+async function fetchSigns(streetName, borough) {
+  const norm = normalizeStreetName(streetName);
+  const where = `on_street='${norm.replace(/'/g,"''")}' AND borough='${borough.replace(/'/g,"''")}' AND sign_description like '%SANITATION BROOM%'`;
+  const url = `https://data.cityofnewyork.us/resource/nfid-uabd.json?$where=${encodeURIComponent(where)}&$limit=50`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+/* ================================================================
+   MAP  (MapLibre GL JS)
+================================================================ */
+let map = null;
+let marker = null;
+
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'mapContainer',
+    style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    center: [-73.987, 40.756],
+    zoom: 11,
+    attributionControl: false,
+  });
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+  map.scrollZoom.disable();
+  map.on('click', () => map.scrollZoom.enable());
+}
+
+function flyTo(lng, lat, label) {
+  if (!map) return;
+  map.flyTo({ center: [lng, lat], zoom: 16, duration: 1200 });
+  if (marker) { marker.remove(); marker = null; }
+  const el = document.createElement('div');
+  el.className = 'mcm';
+  el.innerHTML = `<div class="mcm-label">${label}</div><div class="mcm-stem"></div><div class="mcm-dot"></div>`;
+  marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+    .setLngLat([lng, lat])
+    .addTo(map);
+}
+
+/* ================================================================
+   STATUS COMPUTATION
+================================================================ */
+function computeStatus(signs) {
+  const now    = new Date();
+  const ts     = todayStr();
+  const dayFull = DAYS_FULL[now.getDay()];
+  const nowMin  = now.getHours() * 60 + now.getMinutes();
+
+  if (isSuspended(ts)) {
+    return { state: 'suspended', holidayName: getSuspensionName(ts) };
+  }
+
+  // Check if actively in-effect right now
+  for (const s of signs) {
+    const { days, start, end } = parseSignDesc(s.sign_description);
+    if (!days.includes(dayFull)) continue;
+    const sm = toMin(start), em = toMin(end);
+    if (sm !== null && em !== null && nowMin >= sm && nowMin < em) {
+      return { state: 'active', side: s.side_of_street, start, end, nowMin, endMin: em };
+    }
+  }
+
+  // Check if cleaning is upcoming later today
+  const upcomingToday = signs.filter(s => {
+    const { days, start } = parseSignDesc(s.sign_description);
+    return days.includes(dayFull) && toMin(start) > nowMin;
+  });
+  if (upcomingToday.length > 0) {
+    upcomingToday.sort((a, b) => toMin(parseSignDesc(a.sign_description).start) - toMin(parseSignDesc(b.sign_description).start));
+    const soonest = upcomingToday[0];
+    const { start, end } = parseSignDesc(soonest.sign_description);
+    return { state: 'upcoming', side: soonest.side_of_street, start, end };
+  }
+
+  // Not a cleaning day today (or window already passed)
+  const hasTodayCleaning = signs.some(s => parseSignDesc(s.sign_description).days.includes(dayFull));
+  if (hasTodayCleaning) {
+    return { state: 'clear', reason: 'Cleaning window already passed today' };
+  }
+  const dow = now.toLocaleDateString('en-US', { weekday: 'long' });
+  return { state: 'clear', reason: `No street cleaning on ${dow}s` };
+}
+
+/* ================================================================
+   DOW + NEXT CLEANING HELPERS
+================================================================ */
+function getCleaningDOWSet(signs) {
+  const s = new Set();
+  signs.forEach(sg => parseSignDesc(sg.sign_description).days.forEach(d => s.add(DAYS_FULL.indexOf(d))));
+  return s;
+}
+
+function nextCleaningInfo(signs) {
+  const now      = new Date();
+  const todayDOW = now.getDay();
+  const nowMin   = now.getHours() * 60 + now.getMinutes();
+  const todayFull = DAYS_FULL[todayDOW];
+  const cleanSet  = getCleaningDOWSet(signs);
+  if (cleanSet.size === 0) return null;
+
+  // Upcoming today?
+  const todayUpcoming = signs.filter(s => {
+    const { days, start } = parseSignDesc(s.sign_description);
+    return days.includes(todayFull) && toMin(start) > nowMin;
+  });
+  if (todayUpcoming.length > 0) {
+    todayUpcoming.sort((a, b) => toMin(parseSignDesc(a.sign_description).start) - toMin(parseSignDesc(b.sign_description).start));
+    const sg = todayUpcoming[0];
+    const { start, end } = parseSignDesc(sg.sign_description);
+    return { date: now, isToday: true, side: sg.side_of_street, start, end };
+  }
+
+  // Next future day
+  for (let i = 1; i <= 7; i++) {
+    const dow = (todayDOW + i) % 7;
+    if (!cleanSet.has(dow)) continue;
+    const dayFull = DAYS_FULL[dow];
+    const candidates = signs.filter(s => parseSignDesc(s.sign_description).days.includes(dayFull));
+    if (!candidates.length) continue;
+    candidates.sort((a, b) => toMin(parseSignDesc(a.sign_description).start) - toMin(parseSignDesc(b.sign_description).start));
+    const sg = candidates[0];
+    const { start, end } = parseSignDesc(sg.sign_description);
+    const next = new Date(now);
+    next.setDate(now.getDate() + i);
+    return { date: next, isToday: false, side: sg.side_of_street, start, end };
+  }
+  return null;
+}
+
+/* ================================================================
+   SCHEDULE TABLE BUILDER
+================================================================ */
+function buildScheduleRows(signs) {
+  const groups = {};
+  signs.forEach(s => {
+    const k = s.side_of_street;
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(s);
+  });
+
+  const rows = [];
+  for (const sideCode of ['N','S','E','W']) {
+    if (!groups[sideCode]) continue;
+    const allDays = new Set();
+    const windows = new Map(); // "start-end" → true (dedup)
+    groups[sideCode].forEach(s => {
+      const { days, start, end } = parseSignDesc(s.sign_description);
+      days.forEach(d => allDays.add(d));
+      if (start && end) windows.set(`${start}-${end}`, { start, end });
+    });
+    if (allDays.size === 0) continue;
+    const daysList = DAYS_FULL
+      .filter(d => allDays.has(d))
+      .map(d => DAYS_SHORT[DAYS_FULL.indexOf(d)])
+      .join(' & ');
+    // Sort windows by start time
+    const sortedWindows = [...windows.values()].sort((a, b) => toMin(a.start) - toMin(b.start));
+    const timeStr = sortedWindows.map(w => `${fmtTime(w.start)}–${fmtTime(w.end)}`).join(', ');
+    rows.push({ sideCode, daysList, timeStr });
+  }
+  return rows;
+}
+
+/* ================================================================
+   RENDER
+================================================================ */
+function renderPlateInitial() {
+  const now = new Date();
+  const ts  = todayStr();
+  document.getElementById('plateEyebrow').textContent =
+    'TODAY · ' + now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }).toUpperCase();
+
+  const plateBg = document.getElementById('plateBg');
+  plateBg.className = 'plate-body';
+
+  if (isSuspended(ts)) {
+    plateBg.classList.add('suspended');
+    document.getElementById('plateIcon').textContent = '🎉';
+    document.getElementById('plateHeading').textContent = 'Suspended today';
+    document.getElementById('plateDetail').textContent =
+      getSuspensionName(ts) + ' · No alternate side parking citywide';
+    document.getElementById('plateBadge').textContent = 'CLEAR';
+  } else {
+    document.getElementById('plateIcon').textContent = '🔍';
+    document.getElementById('plateHeading').textContent = 'Look up a street';
+    document.getElementById('plateDetail').textContent = 'Enter a street or address above to check its schedule';
+    document.getElementById('plateBadge').textContent = 'NYC';
+  }
+}
+
+function renderStreet(street) {
+  const { displayName, borough, signs, lng, lat } = street;
+
+  // Street name header
+  document.getElementById('streetNameHead').textContent = displayName;
+
+  // Status plate
+  const status  = computeStatus(signs);
+  const plateBg = document.getElementById('plateBg');
+  const badge   = document.getElementById('plateBadge');
+  const now     = new Date();
+
+  document.getElementById('plateEyebrow').textContent =
+    'TODAY · ' + now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }).toUpperCase();
+
+  plateBg.className = 'plate-body';
+  badge.className   = 'plate-badge';
+
+  if (status.state === 'active') {
+    plateBg.classList.add('red');
+    document.getElementById('plateIcon').textContent = '⚠️';
+    document.getElementById('plateHeading').textContent = 'Move your car';
+    const mins = status.endMin - status.nowMin;
+    const left = mins >= 60 ? `${Math.floor(mins/60)}h ${mins%60}m left` : `${mins} min left`;
+    document.getElementById('plateDetail').textContent =
+      `${sideLabel(status.side)} side · Ends ${fmtTime(status.end)} · ${left}`;
+    badge.textContent = 'ACTIVE';
+    badge.classList.add('urgent');
+  } else if (status.state === 'suspended') {
+    plateBg.classList.add('suspended');
+    document.getElementById('plateIcon').textContent = '🎉';
+    document.getElementById('plateHeading').textContent = 'Suspended today';
+    document.getElementById('plateDetail').textContent =
+      status.holidayName + ' · No alternate side parking';
+    badge.textContent = 'CLEAR';
+  } else if (status.state === 'upcoming') {
+    document.getElementById('plateIcon').textContent = '⏱️';
+    document.getElementById('plateHeading').textContent = 'Cleaning today';
+    document.getElementById('plateDetail').textContent =
+      `${sideLabel(status.side)} side · Starts ${fmtTime(status.start)}`;
+    badge.textContent = 'HEADS UP';
+  } else {
+    document.getElementById('plateIcon').textContent = '✅';
+    document.getElementById('plateHeading').textContent = 'Not in effect today';
+    document.getElementById('plateDetail').textContent = status.reason;
+    badge.textContent = 'CLEAR';
+  }
+
+  // DOW grid
+  const cleanSet = getCleaningDOWSet(signs);
+  const todayDOW = now.getDay();
+  document.querySelectorAll('#dowGrid .dow-cell').forEach(cell => {
+    const dow = parseInt(cell.dataset.dow);
+    cell.className = 'dow-cell ' + (cleanSet.has(dow) ? 'cleaning' : 'off');
+    if (dow === todayDOW) cell.classList.add('today-marker');
+    const ind = cell.querySelector('.dow-indicator');
+    ind.style.background = dow === todayDOW ? 'var(--yellow)' : '';
+  });
+
+  // Tiles
+  const nc = nextCleaningInfo(signs);
+  if (nc) {
+    document.getElementById('tileDate').textContent = nc.isToday
+      ? 'Today'
+      : nc.date.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+    document.getElementById('tileTime').textContent = nc.start && nc.end
+      ? `${fmtTime(nc.start)}–${fmtTime(nc.end)}`
+      : '—';
+    const dur = nc.start && nc.end ? toMin(nc.end) - toMin(nc.start) : null;
+    document.getElementById('tileDur').textContent = dur ? `${dur} min window` : '';
+    document.getElementById('tileSide').textContent = sideLabel(nc.side) + ' side';
+  } else {
+    document.getElementById('tileDate').textContent = 'None found';
+    document.getElementById('tileTime').textContent = '—';
+    document.getElementById('tileSide').textContent = '';
+    document.getElementById('tileDur').textContent = '';
+  }
+
+  // Schedule rows
+  const rows = buildScheduleRows(signs);
+  const body = document.getElementById('scheduleBody');
+  if (rows.length === 0) {
+    body.innerHTML = '<div class="empty-msg">No alternate side parking signs found for this street.</div>';
+  } else {
+    body.innerHTML = rows.map(r => `
+      <div class="sched-row">
+        <div class="dir-circle">${sideArrow(r.sideCode)}</div>
+        <div class="sched-info">
+          <div class="sched-side-lbl">${sideLabel(r.sideCode)} side</div>
+          <div class="sched-days">${r.daysList}</div>
+        </div>
+        <div class="time-pill">${r.timeStr}</div>
+      </div>`).join('');
+  }
+
+  // Map
+  flyTo(lng, lat, displayName);
+  document.getElementById('mapFooterText').textContent = `${displayName} · ${borough}`;
+  const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(displayName + ', ' + borough + ', New York')}`;
+  document.getElementById('mapFooterLink').href = mapsUrl;
+}
+
+function renderSuspensionCalendar() {
+  const ts   = todayStr();
+  const next = nextSuspension();
+  const html = SUSPENSIONS.map(s => {
+    const past   = s.date < ts;
+    const isNext = next && s.date === next.date;
+    const du     = daysUntil(s.date);
+    let cls = 'susp-row';
+    if (past)   cls += ' past';
+    if (isNext) cls += ' next-up';
+    const tag = isNext
+      ? `<span class="susp-tag">Next</span>`
+      : (du === 0 ? '<span class="susp-tag">Today</span>' : '');
+    return `
+      <div class="${cls}">
+        <div class="susp-left">
+          <div class="susp-dot"></div>
+          <span class="susp-name">${s.name}</span>
+        </div>
+        <div class="susp-right">
+          <span class="susp-date">${fmtDate(s.date)}</span>
+          ${tag}
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('suspBody').innerHTML = html;
+
+  // Suspension strip
+  if (next) {
+    const du = daysUntil(next.date);
+    document.getElementById('suspStripText').textContent =
+      `Next suspension · ${next.name} · ${fmtDate(next.date)}`;
+    document.getElementById('suspStripCount').textContent =
+      du === 0 ? 'Today' : du === 1 ? 'Tomorrow' : `${du} days`;
+  } else {
+    document.getElementById('suspStripText').textContent = 'No upcoming suspensions';
+    document.getElementById('suspStripCount').textContent = '';
+  }
+}
+
+function renderInitialDOW() {
+  const todayDOW = new Date().getDay();
+  document.querySelectorAll('#dowGrid .dow-cell').forEach(cell => {
+    const dow = parseInt(cell.dataset.dow);
+    cell.className = 'dow-cell off';
+    if (dow === todayDOW) cell.classList.add('today-marker');
+    const ind = cell.querySelector('.dow-indicator');
+    ind.style.background = dow === todayDOW ? 'var(--yellow)' : '';
+  });
+}
+
+/* ================================================================
+   AUTOCOMPLETE
+================================================================ */
+function showDropdown(feats) {
+  const dd = document.getElementById('acDropdown');
+  acSuggestions = feats;
+  acIdx = -1;
+  if (!feats.length) { dd.classList.remove('open'); return; }
+
+  dd.innerHTML = feats.map((f, i) => {
+    const street  = f.properties.street  || f.properties.name || '';
+    const borough = f.properties.borough || f.properties.region || '';
+    const label   = f.properties.label   || '';
+    const sub     = borough || label;
+    return `<div class="ac-item" data-idx="${i}">
+      <div class="ac-item-main">${titleCase(street)}</div>
+      ${sub ? `<div class="ac-item-sub">${sub}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  dd.querySelectorAll('.ac-item').forEach(el => {
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      selectSuggestion(parseInt(el.dataset.idx));
+    });
+  });
+  dd.classList.add('open');
+}
+
+function hideDropdown() {
+  document.getElementById('acDropdown').classList.remove('open');
+  acSuggestions = [];
+  acIdx = -1;
+}
+
+function highlightItem(idx) {
+  document.querySelectorAll('.ac-item').forEach((el, i) => {
+    el.classList.toggle('ac-active', i === idx);
+  });
+}
+
+function selectSuggestion(idx) {
+  const feat = acSuggestions[idx];
+  if (!feat) return;
+  const street  = feat.properties.street  || feat.properties.name || '';
+  const borough = feat.properties.borough || feat.properties.region || '';
+  document.getElementById('searchInput').value = titleCase(street) + (borough ? ', ' + borough : '');
+  hideDropdown();
+  runSearch(feat);
+}
+
+/* ================================================================
+   SEARCH
+================================================================ */
+async function runSearch(feat) {
+  const btn = document.getElementById('searchBtn');
+  btn.textContent = 'Loading…';
+  btn.disabled = true;
+
+  try {
+    let f = feat;
+    if (!f) {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+      f = await geocode(q);
+    }
+    if (!f) {
+      document.getElementById('scheduleBody').innerHTML =
+        '<div class="empty-msg">Address not found. Try a street name like "E 9th St, Manhattan".</div>';
+      return;
+    }
+
+    const [lng, lat] = f.geometry.coordinates;
+    const streetName  = f.properties.street  || f.properties.name || '';
+    const borough     = f.properties.borough || f.properties.region || '';
+    const displayName = titleCase(streetName) + (borough ? ', ' + borough : '');
+
+    let signs = [];
+    try {
+      signs = await fetchSigns(streetName, borough);
+    } catch (e) {
+      console.warn('Signs fetch failed:', e);
+    }
+
+    renderStreet({ displayName, streetName, borough, signs, lng, lat });
+  } catch (e) {
+    console.error('Search error:', e);
+    document.getElementById('scheduleBody').innerHTML =
+      '<div class="empty-msg">Something went wrong. Please try again.</div>';
+  } finally {
+    btn.textContent = 'Look Up';
+    btn.disabled = false;
+  }
+}
+
+function doSearch() {
+  hideDropdown();
+  runSearch(null);
+}
+
+/* ================================================================
+   INIT
+================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  renderPlateInitial();
+  renderInitialDOW();
+  renderSuspensionCalendar();
+
+  const input = document.getElementById('searchInput');
+
+  input.addEventListener('input', () => {
+    clearTimeout(acTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { hideDropdown(); return; }
+    acTimer = setTimeout(async () => {
+      try {
+        const feats = await fetchSuggestions(q);
+        showDropdown(feats);
+      } catch (_) {}
+    }, 200);
+  });
+
+  input.addEventListener('keydown', e => {
+    const dd = document.getElementById('acDropdown');
+    const open = dd.classList.contains('open');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!open) return;
+      acIdx = Math.min(acIdx + 1, acSuggestions.length - 1);
+      highlightItem(acIdx);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!open) return;
+      acIdx = Math.max(acIdx - 1, -1);
+      highlightItem(acIdx);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (open && acIdx >= 0) selectSuggestion(acIdx);
+      else doSearch();
+    } else if (e.key === 'Escape') {
+      hideDropdown();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-field')) hideDropdown();
+  });
+});
+</script>
+</body>
+</html>

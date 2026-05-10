@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASP NYC — Subway Style</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f6f2eb;
+      --card: #ffffff;
+      --border: #e0dbd0;
+      --border-dk: #c8c2b5;
+      --text: #0a0a0a;
+      --text-2: #5a5555;
+      --text-3: #9a9590;
+      --station-bg: #1a1a1a;
+
+      /* MTA palette */
+      --mon: #EE352E;   /* 1/2/3 */
+      --tue: #F26522;   /* B/D/F/M */
+      --wed: #00933C;   /* 4/5/6 */
+      --thu: #003DA5;   /* A/C/E */
+      --fri: #FCCC0A;   /* N/Q/R/W */
+      --fri-ink: #1a1200;
+      --sat: #808183;
+      --sun: #808183;
+
+      --green: #00933C;
+      --red: #EE352E;
+      --clear-bar: #00933C;
+      --effect-bar: #EE352E;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Station header ───────────────────────── */
+    .station-header {
+      background: var(--station-bg);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .station-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 13px 18px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+    .station-bullet {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--green);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+    .station-text { flex: 1; }
+    .station-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .station-line {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .demo-tag {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.07);
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+
+    /* ── Status bar ───────────────────────────── */
+    .status-bar-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .status-bar {
+      background: var(--clear-bar);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.3s;
+    }
+    .status-bar.active { background: var(--effect-bar); }
+    .status-bar-left {}
+    .status-bar-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+    .status-bar-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+    }
+    .status-time-display {
+      font-size: 28px;
+      font-weight: 800;
+      color: rgba(255,255,255,0.9);
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Container ────────────────────────────── */
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px 96px;
+    }
+
+    /* ── Search ───────────────────────────────── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      font-size: 16px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px 13px 12px 42px;
+      background: var(--card);
+      border: 1.5px solid var(--border-dk);
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input:focus { border-color: var(--green); }
+
+    /* ── Section label ────────────────────────── */
+    .sec-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-3);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 11px;
+      padding-left: 2px;
+    }
+
+    /* ── Day-of-week track ────────────────────── */
+    .dow-track-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+    .dow-track-header {
+      padding: 10px 14px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-3);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .dow-track {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 8px 14px 14px;
+    }
+    .dow-spacer {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      margin: 0 2px;
+    }
+    .dow-stop {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .dow-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .dow-circle.dim {
+      background: #ede7dc;
+      color: #b5b0a8;
+    }
+    .dow-day-label {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+    .dow-day-label.active-label { color: var(--text-2); }
+
+    /* ── Schedule track ───────────────────────── */
+    .sched-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+    .sched-line {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sched-line:last-child { border-bottom: none; }
+
+    .sched-bullets {
+      display: flex;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .bullet {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .bullet-dim {
+      background: #ede7dc;
+      color: #b5b0a8;
+    }
+
+    .sched-info { flex: 1; }
+    .sched-side {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sched-days {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .sched-time {
+      font-size: 13px;
+      color: var(--text-2);
+      margin-top: 1px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Map ──────────────────────────────────── */
+    .map-card {
+      background: #ddd8ce;
+      border: 1.5px solid var(--border-dk);
+      border-radius: 10px;
+      height: 160px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-block-h {
+      position: absolute;
+      top: 50%;
+      left: 0; right: 0;
+      height: 22px;
+      background: #c4bfb4;
+      transform: translateY(-50%);
+    }
+    .map-block-v {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 18px;
+      background: #c4bfb4;
+    }
+    .map-center { position: relative; z-index: 2; text-align: center; }
+    .map-pin-emoji { font-size: 30px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25)); }
+    .map-pin-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      background: white;
+      padding: 3px 9px;
+      border-radius: 5px;
+      display: inline-block;
+      margin-top: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+
+    /* ── Suspensions ──────────────────────────── */
+    .susp-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+    .susp-row {
+      display: flex;
+      align-items: center;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .susp-row:last-child { border-bottom: none; }
+    .susp-row.next { background: #fffbea; }
+
+    .susp-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-dk);
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    .susp-row.next .susp-dot {
+      background: #d97706;
+      box-shadow: 0 0 5px rgba(217,119,6,0.4);
+    }
+    .susp-name { flex: 1; font-size: 14px; color: var(--text); }
+    .susp-row.next .susp-name { font-weight: 600; }
+    .susp-date { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+    .susp-tag {
+      margin-left: 8px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #7a4f00;
+      background: #fef08a;
+      padding: 2px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── Footer ───────────────────────────────── */
+    .footer-text {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-3);
+      padding-top: 4px;
+    }
+
+    /* ── Demo bar ─────────────────────────────── */
+    .demo-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(26,26,26,0.95);
+      backdrop-filter: blur(12px);
+      padding: 11px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 200;
+      border-top: 1px solid #333;
+    }
+    .demo-bar-label { font-size: 12px; color: rgba(255,255,255,0.35); letter-spacing: 0.05em; }
+    .demo-nav { display: flex; gap: 8px; }
+    .demo-btn {
+      padding: 7px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #333;
+      background: #222;
+      color: #aaa;
+      font-family: inherit;
+      transition: all 0.15s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .demo-btn:hover { border-color: #555; color: #fff; }
+    .demo-btn.toggle-btn { background: var(--red); border-color: var(--red); color: #fff; }
+  </style>
+</head>
+<body>
+
+<div class="station-header">
+  <div class="station-inner">
+    <div class="station-bullet">P</div>
+    <div class="station-text">
+      <div class="station-name">Alternate Side Parking</div>
+      <div class="station-line">New York City · All Boroughs</div>
+    </div>
+    <div class="demo-tag">Subway</div>
+  </div>
+</div>
+
+<div class="status-bar-wrap">
+  <div class="status-bar" id="statusBar">
+    <div class="status-bar-left">
+      <div class="status-bar-title" id="statusTitle">Not in effect today</div>
+      <div class="status-bar-sub" id="statusSub">Sunday · No cleaning on Sundays</div>
+    </div>
+    <div class="status-time-display" id="statusTime">——</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">⊙</span>
+    <input class="search-input" type="text" value="E 9th St, Manhattan" readonly>
+  </div>
+
+  <!-- Day of week track -->
+  <div class="sec-label">This week · E 9th St</div>
+  <div class="dow-track-card">
+    <div class="dow-track-header">Street cleaning days highlighted</div>
+    <div class="dow-track">
+      <!-- Mon: active (north) -->
+      <div class="dow-stop">
+        <div class="dow-circle" style="background:#EE352E;color:white">M</div>
+        <div class="dow-day-label active-label">Mon</div>
+      </div>
+      <div class="dow-spacer"></div>
+      <!-- Tue: active (south) -->
+      <div class="dow-stop">
+        <div class="dow-circle" style="background:#F26522;color:white">T</div>
+        <div class="dow-day-label active-label">Tue</div>
+      </div>
+      <div class="dow-spacer"></div>
+      <!-- Wed: dim -->
+      <div class="dow-stop">
+        <div class="dow-circle dim">W</div>
+        <div class="dow-day-label">Wed</div>
+      </div>
+      <div class="dow-spacer"></div>
+      <!-- Thu: active (north) -->
+      <div class="dow-stop">
+        <div class="dow-circle" style="background:#003DA5;color:white">T</div>
+        <div class="dow-day-label active-label">Thu</div>
+      </div>
+      <div class="dow-spacer"></div>
+      <!-- Fri: active (south) -->
+      <div class="dow-stop">
+        <div class="dow-circle" style="background:#FCCC0A;color:#1a1200">F</div>
+        <div class="dow-day-label active-label">Fri</div>
+      </div>
+      <div class="dow-spacer"></div>
+      <!-- Sat: dim -->
+      <div class="dow-stop">
+        <div class="dow-circle dim">S</div>
+        <div class="dow-day-label">Sat</div>
+      </div>
+      <div class="dow-spacer"></div>
+      <!-- Sun: dim -->
+      <div class="dow-stop">
+        <div class="dow-circle dim">S</div>
+        <div class="dow-day-label">Sun</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule -->
+  <div class="sec-label">Weekly schedule</div>
+  <div class="sched-card">
+    <!-- North side: Mon + Thu -->
+    <div class="sched-line">
+      <div class="sched-bullets">
+        <div class="bullet" style="background:#EE352E;color:white">M</div>
+        <div class="bullet" style="background:#003DA5;color:white">T</div>
+      </div>
+      <div class="sched-info">
+        <div class="sched-side">↑ North side</div>
+        <div class="sched-days">Mon &amp; Thu</div>
+        <div class="sched-time">8:30 AM – 10:00 AM</div>
+      </div>
+    </div>
+    <!-- South side: Tue + Fri -->
+    <div class="sched-line">
+      <div class="sched-bullets">
+        <div class="bullet" style="background:#F26522;color:white">T</div>
+        <div class="bullet" style="background:#FCCC0A;color:#1a1200">F</div>
+      </div>
+      <div class="sched-info">
+        <div class="sched-side">↓ South side</div>
+        <div class="sched-days">Tue &amp; Fri</div>
+        <div class="sched-time">8:30 AM – 10:00 AM</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="sec-label">Location</div>
+  <div class="map-card">
+    <div class="map-block-h"></div>
+    <div class="map-block-v" style="left:30%"></div>
+    <div class="map-block-v" style="left:62%"></div>
+    <div class="map-center">
+      <div class="map-pin-emoji">📍</div>
+      <div class="map-pin-name">E 9th St · 2nd – 3rd Ave</div>
+    </div>
+  </div>
+
+  <!-- Suspensions -->
+  <div class="sec-label">Upcoming suspensions · 2026</div>
+  <div class="susp-card">
+    <div class="susp-row next">
+      <div class="susp-dot"></div>
+      <span class="susp-name">Memorial Day</span>
+      <span class="susp-date">Mon, May 25</span>
+      <span class="susp-tag">Next</span>
+    </div>
+    <div class="susp-row"><div class="susp-dot"></div><span class="susp-name">Juneteenth</span><span class="susp-date">Fri, Jun 19</span></div>
+    <div class="susp-row"><div class="susp-dot"></div><span class="susp-name">Independence Day</span><span class="susp-date">Sat, Jul 4</span></div>
+    <div class="susp-row"><div class="susp-dot"></div><span class="susp-name">Labor Day</span><span class="susp-date">Mon, Sep 7</span></div>
+    <div class="susp-row"><div class="susp-dot"></div><span class="susp-name">Columbus Day</span><span class="susp-date">Mon, Oct 12</span></div>
+    <div class="susp-row"><div class="susp-dot"></div><span class="susp-name">Election Day</span><span class="susp-date">Tue, Nov 3</span></div>
+    <div class="susp-row"><div class="susp-dot"></div><span class="susp-name">Veterans Day</span><span class="susp-date">Wed, Nov 11</span></div>
+    <div class="susp-row"><div class="susp-dot"></div><span class="susp-name">Thanksgiving</span><span class="susp-date">Thu, Nov 26</span></div>
+    <div class="susp-row"><div class="susp-dot"></div><span class="susp-name">Christmas Day</span><span class="susp-date">Fri, Dec 25</span></div>
+  </div>
+
+  <div class="footer-text">Data via NYC Open Data · DOT · 2026</div>
+
+</div>
+
+<div class="demo-bar">
+  <span class="demo-bar-label">Demo</span>
+  <div class="demo-nav">
+    <button class="demo-btn toggle-btn" onclick="toggleState()">⚡ Toggle</button>
+    <a class="demo-btn" href="nyc-signs.html">‹ Signs</a>
+    <a class="demo-btn" href="modern-minimal.html">Minimal ›</a>
+  </div>
+</div>
+
+<script>
+  let inEffect = false;
+  function toggleState() {
+    inEffect = !inEffect;
+    const bar = document.getElementById('statusBar');
+    const title = document.getElementById('statusTitle');
+    const sub = document.getElementById('statusSub');
+    const time = document.getElementById('statusTime');
+
+    if (inEffect) {
+      bar.classList.add('active');
+      title.textContent = 'In effect now';
+      sub.textContent = 'Mon · North side · Move your car';
+      time.textContent = '10:00';
+    } else {
+      bar.classList.remove('active');
+      title.textContent = 'Not in effect today';
+      sub.textContent = 'Sunday · No cleaning on Sundays';
+      time.textContent = '——';
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASP NYC — Modern Minimal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050505;
+      --surface: #0f0f0f;
+      --surface-2: #161616;
+      --border: #202020;
+      --border-2: #2a2a2a;
+      --text: #fafafa;
+      --text-2: #a1a1aa;
+      --text-3: #52525b;
+      --text-4: #3f3f46;
+      --green: #16a34a;
+      --green-glow: rgba(22,163,74,0.15);
+      --green-text: #4ade80;
+      --green-bg: #052e16;
+      --amber: #d97706;
+      --amber-glow: rgba(217,119,6,0.15);
+      --amber-text: #fbbf24;
+      --amber-bg: #1c1002;
+      --blue: #2563eb;
+      --blue-dim: rgba(37,99,235,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ───────────────────────────────── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(5,5,5,0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .logo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+    .demo-chip {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-3);
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+    }
+
+    /* ── Layout ───────────────────────────────── */
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 28px 20px 96px;
+    }
+
+    /* ── Search ───────────────────────────────── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      font-size: 16px;
+      pointer-events: none;
+      line-height: 1;
+    }
+    .search-input {
+      width: 100%;
+      padding: 14px 44px;
+      background: var(--surface);
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-dim);
+    }
+    .search-clear {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--border-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-3);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    /* ── Status hero ──────────────────────────── */
+    .status-hero {
+      position: relative;
+      padding: 20px;
+      background: var(--green-bg);
+      border: 1px solid rgba(22,163,74,0.25);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      overflow: hidden;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .status-hero.in-effect {
+      background: var(--amber-bg);
+      border-color: rgba(217,119,6,0.3);
+    }
+    .status-glow {
+      position: absolute;
+      top: -40px;
+      left: -40px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--green-glow);
+      filter: blur(30px);
+      pointer-events: none;
+      transition: background 0.3s;
+    }
+    .status-hero.in-effect .status-glow {
+      background: var(--amber-glow);
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-top: 6px;
+      flex-shrink: 0;
+      box-shadow: 0 0 10px var(--green);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .status-dot.pulsing {
+      background: var(--amber);
+      box-shadow: 0 0 10px var(--amber);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
+    }
+    .status-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--green-text);
+      margin-bottom: 3px;
+      transition: color 0.3s;
+      position: relative;
+    }
+    .status-hero.in-effect .status-title {
+      color: var(--amber-text);
+    }
+    .status-sub {
+      font-size: 13px;
+      color: var(--text-3);
+      position: relative;
+    }
+
+    /* ── Next cleaning pill ───────────────────── */
+    .next-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 32px;
+    }
+    .next-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 2px;
+    }
+    .next-value {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .next-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--blue);
+      padding: 5px 11px;
+      border-radius: var(--radius-xs);
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+
+    /* ── Section header ───────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-4);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+    .section-rule {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Schedule ─────────────────────────────── */
+    .schedule-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .schedule-card {
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .schedule-side {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+    .day-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .day-pip {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-4);
+    }
+    .day-pip.on {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .schedule-time {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+    .schedule-days-label {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-top: 1px;
+    }
+
+    /* ── Map placeholder ──────────────────────── */
+    .map-wrap {
+      margin-bottom: 32px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #0a0a0a;
+      height: 180px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 36px 36px;
+      opacity: 0.5;
+    }
+    .map-road-h {
+      position: absolute;
+      top: 50%;
+      left: 0; right: 0;
+      height: 20px;
+      background: var(--surface-2);
+      border-top: 1px solid var(--border-2);
+      border-bottom: 1px solid var(--border-2);
+      transform: translateY(-50%);
+    }
+    .map-road-v { position: absolute; top: 0; bottom: 0; width: 18px; background: var(--surface-2); border-left: 1px solid var(--border-2); border-right: 1px solid var(--border-2); }
+    .map-street-label {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-2);
+      background: rgba(10,10,10,0.9);
+      padding: 3px 9px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .map-pin {
+      position: relative;
+      z-index: 3;
+    }
+    .map-pin-ring {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--blue-dim);
+      border: 1px solid rgba(37,99,235,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: ring-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes ring-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.7; }
+    }
+    .map-pin-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 2px solid #fff;
+      box-shadow: 0 0 10px rgba(37,99,235,0.5);
+    }
+    .map-corner-tag {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      font-size: 11px;
+      color: var(--text-4);
+      background: rgba(5,5,5,0.9);
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Suspensions ──────────────────────────── */
+    .suspension-list {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 32px;
+    }
+    .s-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 12px;
+      border-radius: var(--radius-xs);
+      transition: background 0.1s;
+    }
+    .s-row:hover { background: var(--surface); }
+    .s-row.highlight {
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .s-name {
+      font-size: 14px;
+      color: var(--text-2);
+    }
+    .s-row.highlight .s-name {
+      color: var(--text);
+      font-weight: 500;
+    }
+    .s-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .s-date {
+      font-size: 13px;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+    }
+    .s-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--amber-text);
+      background: rgba(217,119,6,0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* ── Footer ───────────────────────────────── */
+    .footer {
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-4);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Demo toggle ──────────────────────────── */
+    .demo-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 20px;
+      background: rgba(5,5,5,0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 200;
+    }
+    .demo-bar-label {
+      font-size: 12px;
+      color: var(--text-3);
+    }
+    .demo-nav {
+      display: flex;
+      gap: 8px;
+    }
+    .demo-btn {
+      padding: 7px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-2);
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .demo-btn:hover { border-color: var(--text-3); color: var(--text); }
+    .demo-btn.active-btn {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .demo-btn.toggle-btn {
+      background: transparent;
+      border-color: var(--border-2);
+      color: var(--text-3);
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      ASP NYC
+    </div>
+    <div class="demo-chip">Modern Minimal</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input class="search-input" type="text" value="E 9th St, Manhattan" readonly>
+    <div class="search-clear">✕</div>
+  </div>
+
+  <div class="status-hero" id="statusCard">
+    <div class="status-glow"></div>
+    <div class="status-dot" id="statusDot"></div>
+    <div>
+      <div class="status-title" id="statusTitle">Not in effect today</div>
+      <div class="status-sub" id="statusSub">Sunday, May 10 · No street cleaning on Sundays</div>
+    </div>
+  </div>
+
+  <div class="next-card">
+    <div>
+      <div class="next-label">Next cleaning</div>
+      <div class="next-value" id="nextValue">Mon, May 12 · North side</div>
+    </div>
+    <div class="next-badge" id="nextBadge">8:30–10am</div>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Weekly schedule</span>
+    <div class="section-rule"></div>
+  </div>
+
+  <div class="schedule-grid">
+    <div class="schedule-card">
+      <div class="schedule-side">↑ North</div>
+      <div class="day-row">
+        <div class="day-pip on">M</div>
+        <div class="day-pip">T</div>
+        <div class="day-pip">W</div>
+        <div class="day-pip on">T</div>
+        <div class="day-pip">F</div>
+      </div>
+      <div class="schedule-time">8:30–10am</div>
+      <div class="schedule-days-label">Mon &amp; Thu</div>
+    </div>
+    <div class="schedule-card">
+      <div class="schedule-side">↓ South</div>
+      <div class="day-row">
+        <div class="day-pip">M</div>
+        <div class="day-pip on">T</div>
+        <div class="day-pip">W</div>
+        <div class="day-pip">T</div>
+        <div class="day-pip on">F</div>
+      </div>
+      <div class="schedule-time">8:30–10am</div>
+      <div class="schedule-days-label">Tue &amp; Fri</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Location</span>
+    <div class="section-rule"></div>
+  </div>
+
+  <div class="map-wrap">
+    <div class="map-grid"></div>
+    <div class="map-road-h"></div>
+    <div class="map-road-v" style="left:30%"></div>
+    <div class="map-road-v" style="left:62%"></div>
+    <div class="map-street-label">E 9th St</div>
+    <div class="map-pin">
+      <div class="map-pin-ring">
+        <div class="map-pin-dot"></div>
+      </div>
+    </div>
+    <div class="map-corner-tag">2nd–3rd Ave</div>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Upcoming suspensions</span>
+    <div class="section-rule"></div>
+  </div>
+
+  <div class="suspension-list">
+    <div class="s-row highlight">
+      <span class="s-name">Memorial Day</span>
+      <div class="s-right">
+        <span class="s-date">Mon, May 25</span>
+        <span class="s-badge">15 days</span>
+      </div>
+    </div>
+    <div class="s-row">
+      <span class="s-name">Juneteenth</span>
+      <span class="s-date">Fri, Jun 19</span>
+    </div>
+    <div class="s-row">
+      <span class="s-name">Independence Day</span>
+      <span class="s-date">Sat, Jul 4</span>
+    </div>
+    <div class="s-row">
+      <span class="s-name">Labor Day</span>
+      <span class="s-date">Mon, Sep 7</span>
+    </div>
+    <div class="s-row">
+      <span class="s-name">Columbus Day</span>
+      <span class="s-date">Mon, Oct 12</span>
+    </div>
+    <div class="s-row">
+      <span class="s-name">Election Day</span>
+      <span class="s-date">Tue, Nov 3</span>
+    </div>
+    <div class="s-row">
+      <span class="s-name">Veterans Day</span>
+      <span class="s-date">Wed, Nov 11</span>
+    </div>
+    <div class="s-row">
+      <span class="s-name">Thanksgiving</span>
+      <span class="s-date">Thu, Nov 26</span>
+    </div>
+    <div class="s-row">
+      <span class="s-name">Christmas Day</span>
+      <span class="s-date">Fri, Dec 25</span>
+    </div>
+  </div>
+
+  <div class="footer">Data via NYC Open Data &middot; DOT &middot; 2026</div>
+
+</div>
+
+<div class="demo-bar">
+  <span class="demo-bar-label">Demo</span>
+  <div class="demo-nav">
+    <button class="demo-btn toggle-btn" onclick="toggleState()">⚡ Toggle state</button>
+    <a href="nyc-signs.html"><button class="demo-btn">Signs ›</button></a>
+    <a href="subway.html"><button class="demo-btn">Subway ›</button></a>
+  </div>
+</div>
+
+<script>
+  let inEffect = false;
+  function toggleState() {
+    inEffect = !inEffect;
+    const card = document.getElementById('statusCard');
+    const dot = document.getElementById('statusDot');
+    const title = document.getElementById('statusTitle');
+    const sub = document.getElementById('statusSub');
+    const next = document.getElementById('nextValue');
+    const badge = document.getElementById('nextBadge');
+
+    if (inEffect) {
+      card.classList.add('in-effect');
+      dot.classList.add('pulsing');
+      title.textContent = 'In effect · Move your car';
+      sub.textContent = 'Monday, May 12 · North side · Ends 10:00 AM';
+      next.textContent = 'Ends today at 10:00 AM';
+      badge.style.background = '#d97706';
+      badge.textContent = 'Until 10am';
+    } else {
+      card.classList.remove('in-effect');
+      dot.classList.remove('pulsing');
+      title.textContent = 'Not in effect today';
+      sub.textContent = 'Sunday, May 10 · No street cleaning on Sundays';
+      next.textContent = 'Mon, May 12 · North side';
+      badge.style.background = '#2563eb';
+      badge.textContent = '8:30–10am';
+    }
+  }
+</script>
+</body>
+</html>
