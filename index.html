@@ -1141,6 +1141,14 @@ function renderInitialDOW() {
 ================================================================ */
 function showDropdown(feats) {
   const dd = document.getElementById('acDropdown');
+  // Deduplicate by street + borough
+  const seen = new Set();
+  feats = feats.filter(f => {
+    const key = (f.properties.street || '') + '|' + (f.properties.borough || '');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
   acSuggestions = feats;
   acIdx = -1;
   if (!feats.length) { dd.classList.remove('open'); return; }
