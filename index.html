@@ -1144,7 +1144,7 @@ function showDropdown(feats) {
   // Deduplicate by street + borough
   const seen = new Set();
   feats = feats.filter(f => {
-    const key = (f.properties.street || '') + '|' + (f.properties.borough || '');
+    const key = (f.properties.housenumber || '') + '|' + (f.properties.street || '') + '|' + (f.properties.borough || '');
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -1154,13 +1154,13 @@ function showDropdown(feats) {
   if (!feats.length) { dd.classList.remove('open'); return; }
 
   dd.innerHTML = feats.map((f, i) => {
+    const house   = f.properties.housenumber || '';
     const street  = f.properties.street  || f.properties.name || '';
     const borough = f.properties.borough || f.properties.region || '';
-    const label   = f.properties.label   || '';
-    const sub     = borough || label;
+    const main    = (house ? house + ' ' : '') + titleCase(street);
     return `<div class="ac-item" data-idx="${i}">
-      <div class="ac-item-main">${titleCase(street)}</div>
-      ${sub ? `<div class="ac-item-sub">${sub}</div>` : ''}
+      <div class="ac-item-main">${main}</div>
+      ${borough ? `<div class="ac-item-sub">${borough}</div>` : ''}
     </div>`;
   }).join('');
 
@@ -1188,9 +1188,10 @@ function highlightItem(idx) {
 function selectSuggestion(idx) {
   const feat = acSuggestions[idx];
   if (!feat) return;
-  const street  = feat.properties.street  || feat.properties.name || '';
+  const house  = feat.properties.housenumber || '';
+  const street = feat.properties.street  || feat.properties.name || '';
   const borough = feat.properties.borough || feat.properties.region || '';
-  document.getElementById('searchInput').value = titleCase(street) + (borough ? ', ' + borough : '');
+  document.getElementById('searchInput').value = (house ? house + ' ' : '') + titleCase(street) + (borough ? ', ' + borough : '');
   hideDropdown();
   runSearch(feat);
 }
@@ -1217,9 +1218,10 @@ async function runSearch(feat) {
     }
 
     const [lng, lat] = f.geometry.coordinates;
+    const houseNumber = f.properties.housenumber || '';
     const streetName  = f.properties.street  || f.properties.name || '';
     const borough     = f.properties.borough || f.properties.region || '';
-    const displayName = titleCase(streetName) + (borough ? ', ' + borough : '');
+    const displayName = (houseNumber ? houseNumber + ' ' : '') + titleCase(streetName) + (borough ? ', ' + borough : '');
 
     let signs = [];
     try {
@@ -1229,7 +1231,9 @@ async function runSearch(feat) {
     }
 
     renderStreet({ displayName, streetName, borough, signs, lng, lat });
-    history.pushState({}, '', '?' + new URLSearchParams({ street: streetName, borough }));
+    const urlParams = { street: streetName, borough };
+    if (houseNumber) urlParams.number = houseNumber;
+    history.pushState({}, '', '?' + new URLSearchParams(urlParams));
   } catch (e) {
     console.error('Search error:', e);
     document.getElementById('scheduleBody').innerHTML =
