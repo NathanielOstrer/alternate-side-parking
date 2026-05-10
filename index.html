@@ -1229,6 +1229,7 @@ async function runSearch(feat) {
     }
 
     renderStreet({ displayName, streetName, borough, signs, lng, lat });
+    history.pushState({}, '', '?' + new URLSearchParams({ street: streetName, borough }));
   } catch (e) {
     console.error('Search error:', e);
     document.getElementById('scheduleBody').innerHTML =
@@ -1252,6 +1253,14 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPlateInitial();
   renderInitialDOW();
   renderSuspensionCalendar();
+
+  // Auto-load from URL params (shared link)
+  const params = new URLSearchParams(location.search);
+  if (params.get('street') && params.get('borough')) {
+    const street = params.get('street'), borough = params.get('borough');
+    document.getElementById('searchInput').value = titleCase(street) + ', ' + borough;
+    runSearch(null);
+  }
 
   const input = document.getElementById('searchInput');
 
