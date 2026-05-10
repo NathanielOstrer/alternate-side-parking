@@ -22,26 +22,3 @@ Mobile-first website to check NYC alternate side parking rules by street.
 ## Stack
 
 Single `index.html` — no build step, no framework, no dependencies to install. Just open the file or push to deploy.
-
-## Hosting
-
-Deployed via GitHub Pages. Since `NathanielOstrer.github.io` has a custom domain (`nathanielostrer.com`) pointing to it, every other repo with Pages enabled automatically gets a subpath under that domain:
-
-```
-nathanielostrer.com/               ← NathanielOstrer/NathanielOstrer.github.io
-nathanielostrer.com/alternate-side-parking  ← this repo
-nathanielostrer.com/other-project   ← any other repo with Pages enabled
-```
-
-To enable Pages on a repo: Settings → Pages → Source: main / `/(root)`. Or via CLI:
-
-```bash
-gh api --method POST repos/NathanielOstrer/<repo-name>/pages \
-  -f "source[branch]=main" -f "source[path]=/"
-```
-
-Deploying an update is just:
-
-```bash
-git add -A && git commit -m "..." && git push
-```
