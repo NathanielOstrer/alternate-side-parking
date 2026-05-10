@@ -386,7 +386,7 @@
     /* ── Schedule rows ──────────────────────────────────────── */
     .sched-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       padding: 15px 14px;
       border-bottom: 1px solid var(--border-lt);
@@ -405,10 +405,12 @@
       color: var(--green);
       flex-shrink: 0;
       line-height: 1;
+      margin-top: 2px;
     }
     .sched-info { flex: 1; min-width: 0; }
     .sched-side-lbl { font-size: 9px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 4px; }
-    .sched-days { font-family: var(--sign); font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; line-height: 1; }
+    .sched-days { font-family: var(--sign); font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; line-height: 1.1; margin-bottom: 8px; }
+    .time-pills { display: flex; flex-wrap: wrap; gap: 5px; }
     .time-pill {
       font-family: var(--sign);
       font-size: 13px;
@@ -416,11 +418,10 @@
       color: var(--green);
       background: var(--green-lt);
       border: 1px solid var(--green-mid);
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 4px;
       white-space: nowrap;
       letter-spacing: 0.04em;
-      flex-shrink: 0;
     }
     .empty-msg {
       padding: 18px 14px;
@@ -950,8 +951,8 @@ function buildScheduleRows(signs) {
       .join(' & ');
     // Sort windows by start time
     const sortedWindows = [...windows.values()].sort((a, b) => toMin(a.start) - toMin(b.start));
-    const timeStr = sortedWindows.map(w => `${fmtTime(w.start)}–${fmtTime(w.end)}`).join(', ');
-    rows.push({ sideCode, daysList, timeStr });
+    const timeWindows = sortedWindows.map(w => `${fmtTime(w.start)}–${fmtTime(w.end)}`);
+    rows.push({ sideCode, daysList, timeWindows });
   }
   return rows;
 }
@@ -1073,8 +1074,8 @@ function renderStreet(street) {
         <div class="sched-info">
           <div class="sched-side-lbl">${sideLabel(r.sideCode)} side</div>
           <div class="sched-days">${r.daysList}</div>
+          <div class="time-pills">${r.timeWindows.map(t => `<span class="time-pill">${t}</span>`).join('')}</div>
         </div>
-        <div class="time-pill">${r.timeStr}</div>
       </div>`).join('');
   }
 
