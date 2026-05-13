@@ -1312,7 +1312,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
   if (params.get('street') && params.get('borough')) {
     const street = params.get('street'), borough = params.get('borough');
-    document.getElementById('searchInput').value = titleCase(street) + ', ' + borough;
+    const number = params.get('number') || '';
+    document.getElementById('searchInput').value = (number ? number + ' ' : '') + titleCase(street) + ', ' + borough;
     runSearch(null);
   }
 
