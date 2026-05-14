@@ -831,10 +831,20 @@ function renderStreet(street) {
     document.getElementById('tileDur').textContent = '';
   }
 
-  // Move banner
+  // Move banner — computed per side so both schedules are shown
   const moveBanner = document.getElementById('moveBanner');
   const moveBannerIcon = document.getElementById('moveBannerIcon');
   const moveBannerText = document.getElementById('moveBannerText');
+
+  const dayLabelFor = (isToday, date) => {
+    if (isToday) return 'today';
+    const todayMid = new Date(); todayMid.setHours(0, 0, 0, 0);
+    const ncMid = new Date(date); ncMid.setHours(0, 0, 0, 0);
+    const du = Math.round((ncMid - todayMid) / 86400000);
+    const label = du === 1 ? 'tomorrow' : 'this ' + date.toLocaleDateString('en-US', { weekday: 'long' });
+    return label + ` (${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })})`;
+  };
+
   if (status.state === 'active') {
     moveBanner.className = 'move-banner urgent';
     moveBannerIcon.textContent = '🚨';
@@ -842,23 +852,34 @@ function renderStreet(street) {
     const timeLeft = minsLeft >= 60 ? `${Math.floor(minsLeft/60)}h ${minsLeft%60}m` : `${minsLeft} min`;
     moveBannerText.innerHTML = `Cleaning in progress · <strong>Move now</strong> · ${sideLabel(status.side)} side · ends ${fmtTime(status.end)} (${timeLeft} left)`;
     moveBanner.style.display = 'flex';
-  } else if (nc && nc.start) {
-    moveBanner.className = 'move-banner';
-    moveBannerIcon.textContent = '🚗';
-    let dayLabel;
-    if (nc.isToday) {
-      dayLabel = 'today';
-    } else {
-      const todayMid = new Date(); todayMid.setHours(0, 0, 0, 0);
-      const ncMid = new Date(nc.date); ncMid.setHours(0, 0, 0, 0);
-      const du = Math.round((ncMid - todayMid) / 86400000);
-      dayLabel = du === 1 ? 'tomorrow' : 'this ' + nc.date.toLocaleDateString('en-US', { weekday: 'long' });
-    }
-    const dateQual = nc.isToday ? '' : ` (${nc.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })})`;
-    moveBannerText.innerHTML = `Parked here? Move by <strong>${fmtTime(nc.start)}</strong> ${dayLabel}${dateQual} · ${sideLabel(nc.side)} side`;
-    moveBanner.style.display = 'flex';
   } else {
-    moveBanner.style.display = 'none';
+    const sideOrder = ['N','S','E','W'];
+    const sideInfos = sideOrder
+      .filter(c => signs.some(s => s.side_of_street === c))
+      .map(side => {
+        const info = nextCleaningInfo(signs.filter(s => s.side_of_street === side));
+        return info && info.start ? { side, ...info } : null;
+      })
+      .filter(Boolean);
+
+    if (sideInfos.length === 0) {
+      moveBanner.style.display = 'none';
+    } else {
+      moveBanner.className = 'move-banner';
+      moveBannerIcon.textContent = '🚗';
+      const uniqueNexts = new Set(sideInfos.map(i => i.date.toDateString() + '|' + i.start));
+      if (uniqueNexts.size === 1) {
+        const { isToday, date, start, side } = sideInfos[0];
+        const sideStr = sideInfos.length === 1 ? ` · ${sideLabel(side)} side` : '';
+        moveBannerText.innerHTML = `Parked here? Move by <strong>${fmtTime(start)}</strong> ${dayLabelFor(isToday, date)}${sideStr}`;
+      } else {
+        const lines = sideInfos.map(({ side, isToday, date, start }) =>
+          `<strong>${sideLabel(side)} side</strong> — move by <strong>${fmtTime(start)}</strong> ${dayLabelFor(isToday, date)}`
+        );
+        moveBannerText.innerHTML = `Parked here?<br>${lines.join('<br>')}`;
+      }
+      moveBanner.style.display = 'flex';
+    }
   }
 
   // Schedule rows
