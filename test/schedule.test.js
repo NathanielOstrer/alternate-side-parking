@@ -343,11 +343,11 @@ describe('nextCleaningInfo', () => {
     assert.equal(r.start, '8:30AM');
   });
 
-  it('returns Thursday when Mon window has passed', () => {
-    // MON_11AM, window passed → next is Thursday
+  it('skips suspended Thursday and returns the following Monday', () => {
+    // MON_11AM (May 11), window passed → Thu May 14 is suspended → next is Mon May 18
     const r = nextCleaningInfo([monThuSign], MON_11AM);
     assert.equal(r.isToday, false);
-    assert.equal(r.date.getDay(), 4); // Thursday
+    assert.equal(r.date.getDay(), 1); // Monday
   });
 
   it('returns Monday from Sunday', () => {

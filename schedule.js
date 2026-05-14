@@ -241,28 +241,31 @@ function nextCleaningInfo(signs, now = new Date()) {
   const cleanSet  = getCleaningDOWSet(signs);
   if (cleanSet.size === 0) return null;
 
-  const todayUpcoming = signs.filter(s => {
-    const { days, start } = parseSignDesc(s.sign_description);
-    return days.includes(todayFull) && toMin(start) > nowMin;
-  });
-  if (todayUpcoming.length > 0) {
-    todayUpcoming.sort((a, b) => toMin(parseSignDesc(a.sign_description).start) - toMin(parseSignDesc(b.sign_description).start));
-    const sg = todayUpcoming[0];
-    const { start, end } = parseSignDesc(sg.sign_description);
-    return { date: now, isToday: true, side: sg.side_of_street, start, end };
+  if (!isSuspended(todayStr(now))) {
+    const todayUpcoming = signs.filter(s => {
+      const { days, start } = parseSignDesc(s.sign_description);
+      return days.includes(todayFull) && toMin(start) > nowMin;
+    });
+    if (todayUpcoming.length > 0) {
+      todayUpcoming.sort((a, b) => toMin(parseSignDesc(a.sign_description).start) - toMin(parseSignDesc(b.sign_description).start));
+      const sg = todayUpcoming[0];
+      const { start, end } = parseSignDesc(sg.sign_description);
+      return { date: now, isToday: true, side: sg.side_of_street, start, end };
+    }
   }
 
-  for (let i = 1; i <= 7; i++) {
+  for (let i = 1; i <= 14; i++) {
     const dow = (todayDOW + i) % 7;
     if (!cleanSet.has(dow)) continue;
+    const next = new Date(now);
+    next.setDate(now.getDate() + i);
+    if (isSuspended(todayStr(next))) continue;
     const dayFull = DAYS_FULL[dow];
     const candidates = signs.filter(s => parseSignDesc(s.sign_description).days.includes(dayFull));
     if (!candidates.length) continue;
     candidates.sort((a, b) => toMin(parseSignDesc(a.sign_description).start) - toMin(parseSignDesc(b.sign_description).start));
     const sg = candidates[0];
     const { start, end } = parseSignDesc(sg.sign_description);
-    const next = new Date(now);
-    next.setDate(now.getDate() + i);
     return { date: next, isToday: false, side: sg.side_of_street, start, end };
   }
   return null;
