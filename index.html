@@ -485,6 +485,30 @@
     .susp-date { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .susp-tag { font-family: var(--sign); font-size: 9px; font-weight: 700; color: var(--yellow-dk); background: var(--yellow); padding: 3px 8px; border-radius: 3px; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
 
+    /* ── Move banner ──────────────────────────────────────────── */
+    .move-banner {
+      background: var(--yellow-bg);
+      border: 1.5px solid var(--yellow-border);
+      border-radius: var(--rad);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .move-banner.urgent {
+      background: var(--red-lt);
+      border-color: var(--red-border);
+    }
+    .move-banner-icon { font-size: 22px; flex-shrink: 0; line-height: 1; }
+    .move-banner-text {
+      font-size: 14px;
+      color: var(--yellow-dk);
+      font-weight: 500;
+      line-height: 1.45;
+    }
+    .move-banner.urgent .move-banner-text { color: var(--red); }
+    .move-banner-text strong { font-weight: 700; }
+
     /* ── Footer ─────────────────────────────────────────────── */
     .footer { background: var(--green-dk); padding: 18px var(--ph); }
     .footer-inner {
@@ -584,6 +608,12 @@
       <div class="tile-value" id="tileTime">—</div>
       <div class="tile-sub" id="tileDur"> </div>
     </div>
+  </div>
+
+  <!-- Move reminder -->
+  <div class="move-banner" id="moveBanner" style="display:none">
+    <div class="move-banner-icon" id="moveBannerIcon"></div>
+    <div class="move-banner-text" id="moveBannerText"></div>
   </div>
 
   <!-- Weekly schedule -->
@@ -799,6 +829,36 @@ function renderStreet(street) {
     document.getElementById('tileTime').textContent = '—';
     document.getElementById('tileSide').textContent = '';
     document.getElementById('tileDur').textContent = '';
+  }
+
+  // Move banner
+  const moveBanner = document.getElementById('moveBanner');
+  const moveBannerIcon = document.getElementById('moveBannerIcon');
+  const moveBannerText = document.getElementById('moveBannerText');
+  if (status.state === 'active') {
+    moveBanner.className = 'move-banner urgent';
+    moveBannerIcon.textContent = '🚨';
+    const minsLeft = status.endMin - status.nowMin;
+    const timeLeft = minsLeft >= 60 ? `${Math.floor(minsLeft/60)}h ${minsLeft%60}m` : `${minsLeft} min`;
+    moveBannerText.innerHTML = `Cleaning in progress · <strong>Move now</strong> · ${sideLabel(status.side)} side · ends ${fmtTime(status.end)} (${timeLeft} left)`;
+    moveBanner.style.display = 'flex';
+  } else if (nc && nc.start) {
+    moveBanner.className = 'move-banner';
+    moveBannerIcon.textContent = '🚗';
+    let dayLabel;
+    if (nc.isToday) {
+      dayLabel = 'today';
+    } else {
+      const todayMid = new Date(); todayMid.setHours(0, 0, 0, 0);
+      const ncMid = new Date(nc.date); ncMid.setHours(0, 0, 0, 0);
+      const du = Math.round((ncMid - todayMid) / 86400000);
+      dayLabel = du === 1 ? 'tomorrow' : 'this ' + nc.date.toLocaleDateString('en-US', { weekday: 'long' });
+    }
+    const dateQual = nc.isToday ? '' : ` (${nc.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })})`;
+    moveBannerText.innerHTML = `Parked here? Move by <strong>${fmtTime(nc.start)}</strong> ${dayLabel}${dateQual} · ${sideLabel(nc.side)} side`;
+    moveBanner.style.display = 'flex';
+  } else {
+    moveBanner.style.display = 'none';
   }
 
   // Schedule rows
