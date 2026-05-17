@@ -185,6 +185,33 @@ function filterSignsToBlockFace(signs, lng, lat) {
   );
 }
 
+// Returns the side_of_street code ('N','S','E','W') whose centroid of sign
+// coordinates is nearest to the given click point. Returns null if no signs
+// have usable coordinates.
+function pickSideFromClick(signs, lng, lat) {
+  if (!signs.length) return null;
+  const [ax, ay] = lngLatToStatePlane(lng, lat);
+  const groups = {};
+  for (const s of signs) {
+    const x = parseFloat(s.sign_x_coord), y = parseFloat(s.sign_y_coord);
+    if (!isFinite(x) || !isFinite(y)) continue;
+    const side = s.side_of_street;
+    if (!groups[side]) groups[side] = { sumX: 0, sumY: 0, count: 0 };
+    groups[side].sumX += x;
+    groups[side].sumY += y;
+    groups[side].count++;
+  }
+  const sides = Object.keys(groups);
+  if (!sides.length) return null;
+  let bestSide = null, bestDist = Infinity;
+  for (const side of sides) {
+    const { sumX, sumY, count } = groups[side];
+    const d = (sumX / count - ax) ** 2 + (sumY / count - ay) ** 2;
+    if (d < bestDist) { bestDist = d; bestSide = side; }
+  }
+  return bestSide;
+}
+
 /* ================================================================
    STATUS COMPUTATION
 ================================================================ */
@@ -328,5 +355,6 @@ if (typeof module !== 'undefined' && module.exports) {
     lngLatToStatePlane, filterSignsToBlockFace,
     computeStatus, getCleaningDOWSet, nextCleaningInfo,
     buildScheduleRows, buildSearchQueryFromParams,
+    pickSideFromClick,
   };
 }

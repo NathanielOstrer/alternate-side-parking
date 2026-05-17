@@ -531,6 +531,94 @@
       .header-link:last-child { display: none; }
     }
     @media (max-width: 340px) { .susp-date { display: none; } }
+
+    /* ── GPS button ─────────────────────────────────────────── */
+    .gps-btn {
+      padding: 0 14px;
+      height: 100%;
+      background: var(--card);
+      border: 2px solid var(--border-dk);
+      border-radius: var(--rad);
+      color: var(--text-2);
+      font-size: 18px;
+      line-height: 1;
+      transition: border-color 0.15s, background 0.15s;
+      flex-shrink: 0;
+      min-width: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gps-btn:hover { border-color: var(--green); background: var(--green-lt); }
+    .gps-btn:disabled { opacity: 0.5; cursor: default; }
+
+    /* ── Search error ────────────────────────────────────────── */
+    .search-error {
+      font-size: 13px;
+      color: var(--red);
+      background: var(--red-lt);
+      border: 1px solid var(--red-border);
+      border-radius: var(--rad);
+      padding: 10px 13px;
+    }
+
+    /* ── Side picker ─────────────────────────────────────────── */
+    .side-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-lt);
+      background: var(--bg-2);
+    }
+    .side-pill {
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: var(--card);
+      border: 1.5px solid var(--border-dk);
+      font-family: var(--sign);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.12s;
+      user-select: none;
+    }
+    .side-pill:hover { border-color: var(--green); color: var(--green); }
+    .side-pill.active { background: var(--green); border-color: var(--green); color: #fff; }
+
+    /* ── Desktop layout (≥ 900px) ────────────────────────────── */
+    @media (min-width: 900px) {
+      .header-inner,
+      .footer-inner { max-width: 1100px; }
+
+      .container {
+        max-width: 1100px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+        column-gap: 24px;
+        align-items: start;
+      }
+
+      /* Full-width items */
+      .search-row,
+      #searchError,
+      #calendar { grid-column: 1 / -1; }
+
+      /* Left column items */
+      .status-plate,
+      .susp-strip,
+      .dow-grid,
+      .tiles-row,
+      #moveBanner { grid-column: 1; }
+
+      /* Right column items */
+      #scheduleSection,
+      #mapSection { grid-column: 2; }
+
+      #mapContainer { height: min(60vh, 480px); }
+    }
   </style>
 </head>
 <body>
@@ -562,8 +650,10 @@
         autocomplete="off" spellcheck="false">
       <div class="ac-dropdown" id="acDropdown"></div>
     </div>
+    <button class="gps-btn" id="gpsBtn" title="Use my location" aria-label="Use my location">📍</button>
     <button class="search-btn" id="searchBtn" onclick="doSearch()">Look&nbsp;Up</button>
   </div>
+  <div class="search-error" id="searchError" style="display:none"></div>
 
   <!-- Status plate -->
   <div class="status-plate anim anim-2">
@@ -617,18 +707,21 @@
   </div>
 
   <!-- Weekly schedule -->
-  <div class="sign-section anim anim-5">
+  <div class="sign-section anim anim-5" id="scheduleSection">
     <div class="sign-head">
       📋 Weekly Schedule
       <span class="sign-head-count" id="streetNameHead">Enter a street</span>
     </div>
-    <div class="sign-body" id="scheduleBody">
-      <div class="empty-msg">Search for a street to see its alternate side parking schedule.</div>
+    <div class="sign-body">
+      <div class="side-picker" id="sidePicker" style="display:none"></div>
+      <div id="scheduleBody">
+        <div class="empty-msg">Search for a street to see its alternate side parking schedule.</div>
+      </div>
     </div>
   </div>
 
   <!-- Map -->
-  <div class="sign-section anim anim-6">
+  <div class="sign-section anim anim-6" id="mapSection">
     <div class="sign-head">📍 Location</div>
     <div class="sign-body">
       <div id="mapContainer"></div>
@@ -682,6 +775,69 @@ async function geocode(q) {
   return feats[0] ?? null;
 }
 
+async function reverseGeocode(lat, lng) {
+  const r = await fetch(`${GEO}/reverse?point.lat=${lat}&point.lon=${lng}&size=1`);
+  const feats = (await r.json()).features ?? [];
+  return feats[0] ?? null;
+}
+
+async function requestGPS() {
+  const btn = document.getElementById('gpsBtn');
+  const errEl = document.getElementById('searchError');
+  errEl.style.display = 'none';
+
+  if (!navigator.geolocation) {
+    errEl.textContent = 'GPS not available in this browser.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 8000 })
+    );
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const feat = await reverseGeocode(lat, lng);
+    if (!feat) {
+      errEl.textContent = 'Location not found in NYC — try entering an address.';
+      errEl.style.display = 'block';
+      return;
+    }
+    const house  = feat.properties.housenumber || '';
+    const street = feat.properties.street  || feat.properties.name || '';
+    const boro   = feat.properties.borough || feat.properties.region || '';
+    document.getElementById('searchInput').value = (house ? house + ' ' : '') + titleCase(street) + (boro ? ', ' + boro : '');
+    await runSearch(feat, { lng, lat });
+  } catch (e) {
+    let msg = 'Location unavailable — try entering an address.';
+    if (e.code === 1) msg = 'Location access denied — try entering an address.';
+    else if (e.code === 3) msg = 'Location timed out — try entering an address.';
+    errEl.textContent = msg;
+    errEl.style.display = 'block';
+  } finally {
+    btn.textContent = '📍';
+    btn.disabled = false;
+  }
+}
+
+async function onMapPick({ lng, lat }) {
+  const errEl = document.getElementById('searchError');
+  errEl.style.display = 'none';
+  try {
+    const feat = await reverseGeocode(lat, lng);
+    if (!feat) return;
+    const house  = feat.properties.housenumber || '';
+    const street = feat.properties.street  || feat.properties.name || '';
+    const boro   = feat.properties.borough || feat.properties.region || '';
+    document.getElementById('searchInput').value = (house ? house + ' ' : '') + titleCase(street) + (boro ? ', ' + boro : '');
+    await runSearch(feat, { lng, lat });
+  } catch (e) {
+    console.warn('Map pick failed:', e);
+  }
+}
+
 /* ================================================================
    OPEN DATA  (nfid-uabd)
 ================================================================ */
@@ -700,6 +856,8 @@ async function fetchSigns(streetName, borough) {
 ================================================================ */
 let map = null;
 let marker = null;
+let selectedSide = null;   // null = all sides; 'N'|'S'|'E'|'W' = filtered
+let lastStreet = null;     // most recent renderStreet argument for re-renders
 
 function initMap() {
   map = new maplibregl.Map({
@@ -711,7 +869,11 @@ function initMap() {
   });
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   map.scrollZoom.disable();
-  map.on('click', () => map.scrollZoom.enable());
+  map.on('click', e => {
+    map.scrollZoom.enable();
+    onMapPick(e.lngLat);
+  });
+  map.on('load', () => { map.getCanvas().style.cursor = 'crosshair'; });
 }
 
 function flyTo(lng, lat, label) {
@@ -753,14 +915,17 @@ function renderPlateInitial() {
   }
 }
 
-function renderStreet(street) {
+function renderStreet(street, { skipMap = false } = {}) {
   const { displayName, borough, signs, lng, lat } = street;
+
+  // Signs filtered to selected side (null = all sides)
+  const sideSigns = selectedSide ? signs.filter(s => s.side_of_street === selectedSide) : signs;
 
   // Street name header
   document.getElementById('streetNameHead').textContent = displayName;
 
-  // Status plate
-  const status  = computeStatus(signs);
+  // Status plate — uses sideSigns so it reflects the selected side
+  const status  = computeStatus(sideSigns);
   const plateBg = document.getElementById('plateBg');
   const badge   = document.getElementById('plateBadge');
   const now     = new Date();
@@ -801,7 +966,7 @@ function renderStreet(street) {
     badge.textContent = 'CLEAR';
   }
 
-  // DOW grid
+  // DOW grid — always shows all sides (full block picture)
   const cleanSet = getCleaningDOWSet(signs);
   const todayDOW = now.getDay();
   document.querySelectorAll('#dowGrid .dow-cell').forEach(cell => {
@@ -812,8 +977,8 @@ function renderStreet(street) {
     ind.style.background = dow === todayDOW ? 'var(--yellow)' : '';
   });
 
-  // Tiles
-  const nc = nextCleaningInfo(signs);
+  // Tiles — uses sideSigns
+  const nc = nextCleaningInfo(sideSigns);
   if (nc) {
     document.getElementById('tileDate').textContent = nc.isToday
       ? 'Today'
@@ -831,8 +996,8 @@ function renderStreet(street) {
     document.getElementById('tileDur').textContent = '';
   }
 
-  // Move banner — computed per side so both schedules are shown
-  const moveBanner = document.getElementById('moveBanner');
+  // Move banner — uses sideSigns so per-side loop only shows selected side
+  const moveBanner     = document.getElementById('moveBanner');
   const moveBannerIcon = document.getElementById('moveBannerIcon');
   const moveBannerText = document.getElementById('moveBannerText');
 
@@ -855,9 +1020,9 @@ function renderStreet(street) {
   } else {
     const sideOrder = ['N','S','E','W'];
     const sideInfos = sideOrder
-      .filter(c => signs.some(s => s.side_of_street === c))
+      .filter(c => sideSigns.some(s => s.side_of_street === c))
       .map(side => {
-        const info = nextCleaningInfo(signs.filter(s => s.side_of_street === side));
+        const info = nextCleaningInfo(sideSigns.filter(s => s.side_of_street === side));
         return info && info.start ? { side, ...info } : null;
       })
       .filter(Boolean);
@@ -882,7 +1047,7 @@ function renderStreet(street) {
     }
   }
 
-  // Schedule rows
+  // Schedule rows — always shows all sides
   const rows = buildScheduleRows(signs);
   const body = document.getElementById('scheduleBody');
   if (rows.length === 0) {
@@ -900,10 +1065,32 @@ function renderStreet(street) {
   }
 
   // Map
-  flyTo(lng, lat, displayName);
-  document.getElementById('mapFooterText').textContent = `${displayName} · ${borough}`;
-  const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(displayName + ', ' + borough + ', New York')}`;
-  document.getElementById('mapFooterLink').href = mapsUrl;
+  if (!skipMap) {
+    flyTo(lng, lat, displayName);
+    document.getElementById('mapFooterText').textContent = `${displayName} · ${borough}`;
+    const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(displayName + ', ' + borough + ', New York')}`;
+    document.getElementById('mapFooterLink').href = mapsUrl;
+  }
+}
+
+function renderSidePicker(signs) {
+  const el = document.getElementById('sidePicker');
+  const sides = ['N','S','E','W'].filter(c => signs.some(s => s.side_of_street === c));
+  if (sides.length < 2) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const pills = [
+    `<button class="side-pill${selectedSide === null ? ' active' : ''}" onclick="setSide(null)">All</button>`,
+    ...sides.map(c =>
+      `<button class="side-pill${selectedSide === c ? ' active' : ''}" onclick="setSide('${c}')">${sideArrow(c)} ${sideLabel(c)}</button>`
+    ),
+  ];
+  el.innerHTML = pills.join('');
+}
+
+function setSide(code) {
+  selectedSide = code;
+  if (lastStreet) renderStreet(lastStreet, { skipMap: true });
+  renderSidePicker(lastStreet ? lastStreet.signs : []);
 }
 
 function renderSuspensionCalendar() {
@@ -1020,7 +1207,8 @@ function selectSuggestion(idx) {
 /* ================================================================
    SEARCH
 ================================================================ */
-async function runSearch(feat) {
+// clickLngLat: optional {lng, lat} of raw map/GPS click for side detection
+async function runSearch(feat, clickLngLat = null) {
   const btn = document.getElementById('searchBtn');
   btn.textContent = 'Loading…';
   btn.disabled = true;
@@ -1052,7 +1240,13 @@ async function runSearch(feat) {
       console.warn('Signs fetch failed:', e);
     }
 
-    renderStreet({ displayName, streetName, borough, signs, lng, lat });
+    // Use click coordinates for side detection when coming from map/GPS; clear otherwise
+    selectedSide = clickLngLat ? pickSideFromClick(signs, clickLngLat.lng, clickLngLat.lat) : null;
+    lastStreet = { displayName, streetName, borough, signs, lng, lat };
+
+    renderStreet(lastStreet);
+    renderSidePicker(signs);
+
     const urlParams = { street: streetName, borough };
     if (houseNumber) urlParams.number = houseNumber;
     history.pushState({}, '', '?' + new URLSearchParams(urlParams));
@@ -1087,9 +1281,12 @@ document.addEventListener('DOMContentLoaded', () => {
     runSearch(null);
   }
 
+  document.getElementById('gpsBtn').addEventListener('click', requestGPS);
+
   const input = document.getElementById('searchInput');
 
   input.addEventListener('input', () => {
+    document.getElementById('searchError').style.display = 'none';
     clearTimeout(acTimer);
     const q = input.value.trim();
     if (q.length < 2) { hideDropdown(); return; }

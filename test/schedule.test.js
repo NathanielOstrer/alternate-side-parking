@@ -10,6 +10,7 @@ const {
   lngLatToStatePlane, filterSignsToBlockFace,
   computeStatus, getCleaningDOWSet, nextCleaningInfo,
   buildScheduleRows, buildSearchQueryFromParams,
+  pickSideFromClick,
 } = require('../schedule.js');
 
 // Fixed clock: Tuesday 2026-05-12, 09:00 local
@@ -467,5 +468,54 @@ describe('buildSearchQueryFromParams', () => {
   it('title-cases the street name', () => {
     const q = buildSearchQueryFromParams(params({ street: 'WILLOW STREET', borough: 'Brooklyn', number: '70' }));
     assert.equal(q, '70 Willow Street, Brooklyn');
+  });
+});
+
+// ─── pickSideFromClick ────────────────────────────────────────────────────────
+describe('pickSideFromClick', () => {
+  // Times Square projects to ~(988212, 211939) — use as reference origin.
+  const REF_LNG = -73.9857, REF_LAT = 40.7484;
+  const [refX, refY] = lngLatToStatePlane(REF_LNG, REF_LAT);
+
+  function sideSign(side, x, y) {
+    return {
+      side_of_street: side,
+      on_street: 'TEST AVENUE A',
+      from_street: 'FIRST CROSS ST',
+      to_street: 'SECOND CROSS ST',
+      sign_x_coord: String(Math.round(x)),
+      sign_y_coord: String(Math.round(y)),
+      sign_description: 'NO PARKING (SANITATION BROOM SYMBOL) MONDAY 8:30AM-10AM <->',
+    };
+  }
+
+  it('returns the side whose centroid is nearest the click', () => {
+    // N centroid right at the click point; S centroid 2000 ft away
+    const n = sideSign('N', refX,        refY);
+    const s = sideSign('S', refX + 2000, refY);
+    assert.equal(pickSideFromClick([n, s], REF_LNG, REF_LAT), 'N');
+  });
+
+  it('returns the other side when it is closer', () => {
+    // S centroid at click point; N centroid 2000 ft away
+    const n = sideSign('N', refX + 2000, refY);
+    const s = sideSign('S', refX,        refY);
+    assert.equal(pickSideFromClick([n, s], REF_LNG, REF_LAT), 'S');
+  });
+
+  it('returns the only side when there is one side', () => {
+    const e = sideSign('E', refX, refY);
+    assert.equal(pickSideFromClick([e], REF_LNG, REF_LAT), 'E');
+  });
+
+  it('returns null for empty signs', () => {
+    assert.equal(pickSideFromClick([], REF_LNG, REF_LAT), null);
+  });
+
+  it('returns null when all signs lack numeric coordinates', () => {
+    const noCoords = [
+      { side_of_street: 'N', sign_description: '...', on_street: 'X', from_street: 'A', to_street: 'B', sign_x_coord: 'N/A', sign_y_coord: '' },
+    ];
+    assert.equal(pickSideFromClick(noCoords, REF_LNG, REF_LAT), null);
   });
 });
