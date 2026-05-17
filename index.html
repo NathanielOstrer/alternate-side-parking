@@ -43,7 +43,7 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
     body {
       background: var(--bg);
       color: var(--text);
@@ -51,6 +51,7 @@
       font-size: 16px;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
     a { color: inherit; text-decoration: none; }
     button { cursor: pointer; font-family: inherit; }
@@ -87,6 +88,8 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.22);
     }
     .header-inner {
+      width: 100%;
+      min-width: 0;
       max-width: var(--mw);
       margin: 0 auto;
       padding: 12px var(--ph);
@@ -133,6 +136,7 @@
 
     /* ── Container ──────────────────────────────────────────── */
     .container {
+      width: 100%;
       max-width: var(--mw);
       margin: 0 auto;
       padding: 18px var(--ph) 60px;
@@ -141,9 +145,12 @@
       gap: 14px;
     }
 
+    /* Column wrappers — transparent on mobile, become flex cols on desktop */
+    .col-left, .col-right { display: contents; }
+
     /* ── Search ─────────────────────────────────────────────── */
     .search-row { display: flex; gap: 8px; position: relative; z-index: 50; }
-    .search-field { flex: 1; position: relative; }
+    .search-field { flex: 1; min-width: 0; position: relative; }
     .search-icon {
       position: absolute;
       left: 12px;
@@ -157,6 +164,7 @@
     }
     .search-input {
       width: 100%;
+      min-width: 0;
       padding: 13px 13px 13px 40px;
       background: var(--card);
       border: 2px solid var(--border-dk);
@@ -534,23 +542,25 @@
 
     /* ── GPS button ─────────────────────────────────────────── */
     .gps-btn {
-      padding: 0 14px;
-      height: 100%;
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      flex-shrink: 0;
       background: var(--card);
       border: 2px solid var(--border-dk);
       border-radius: var(--rad);
       color: var(--text-2);
-      font-size: 18px;
-      line-height: 1;
-      transition: border-color 0.15s, background 0.15s;
-      flex-shrink: 0;
-      min-width: 48px;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .gps-btn:hover { border-color: var(--green); background: var(--green-lt); }
+    .gps-btn:hover { border-color: var(--green); background: var(--green-lt); color: var(--green); }
     .gps-btn:disabled { opacity: 0.5; cursor: default; }
+
+    /* ── Logo link ───────────────────────────────────────────── */
+    .logo-link { display: contents; }
+    .logo-link:hover .logo { opacity: 0.82; }
 
     /* ── Search error ────────────────────────────────────────── */
     .search-error {
@@ -606,16 +616,18 @@
       #searchError,
       #calendar { grid-column: 1 / -1; }
 
-      /* Left column items */
-      .status-plate,
-      .susp-strip,
-      .dow-grid,
-      .tiles-row,
-      #moveBanner { grid-column: 1; }
+      /* Column wrappers become independent flex columns */
+      .col-left, .col-right {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+      }
+      .col-left  { grid-column: 1; }
+      .col-right { grid-column: 2; }
 
-      /* Right column items */
-      #scheduleSection,
-      #mapSection { grid-column: 2; }
+      /* Map sticks at top of right column while schedule scrolls below */
+      #mapSection { position: sticky; top: 12px; }
 
       #mapContainer { height: min(60vh, 480px); }
     }
@@ -627,10 +639,12 @@
 
 <header class="header">
   <div class="header-inner">
-    <div class="logo-wrap">
-      <div class="logo">🧹 Alternate Side</div>
-      <div class="logo-sub">New York City Parking</div>
-    </div>
+    <a class="logo-link" href="./" aria-label="Alternate Side — home">
+      <div class="logo-wrap">
+        <div class="logo">🧹 Alternate Side</div>
+        <div class="logo-sub">New York City Parking</div>
+      </div>
+    </a>
     <nav class="header-nav">
       <a class="header-link" href="#calendar">Suspensions</a>
       <a class="header-link" href="#about">About</a>
@@ -650,87 +664,95 @@
         autocomplete="off" spellcheck="false">
       <div class="ac-dropdown" id="acDropdown"></div>
     </div>
-    <button class="gps-btn" id="gpsBtn" title="Use my location" aria-label="Use my location">📍</button>
+    <button class="gps-btn" id="gpsBtn" title="Use my location" aria-label="Use my location"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2 L3 21 L12 17 L21 21 Z"/></svg></button>
     <button class="search-btn" id="searchBtn" onclick="doSearch()">Look&nbsp;Up</button>
   </div>
   <div class="search-error" id="searchError" style="display:none"></div>
 
-  <!-- Status plate -->
-  <div class="status-plate anim anim-2">
-    <div class="plate-body" id="plateBg">
-      <div class="plate-eyebrow" id="plateEyebrow"></div>
-      <div class="plate-icon" id="plateIcon">🔍</div>
-      <div class="plate-text">
-        <div class="plate-heading" id="plateHeading">Look up a street</div>
-        <div class="plate-detail" id="plateDetail">Enter a street or address above to check its schedule</div>
-      </div>
-      <div class="plate-badge" id="plateBadge">NYC</div>
-    </div>
-  </div>
+  <div class="col-left">
 
-  <!-- Next suspension strip -->
-  <div class="susp-strip anim anim-3">
-    <div class="susp-strip-bullet"></div>
-    <div class="susp-strip-text" id="suspStripText">Loading suspension calendar…</div>
-    <div class="susp-strip-count" id="suspStripCount"></div>
-  </div>
-
-  <!-- DOW grid -->
-  <div class="dow-grid anim anim-3" id="dowGrid">
-    <div class="dow-cell off" data-dow="1"><span>MON</span><div class="dow-indicator"></div></div>
-    <div class="dow-cell off" data-dow="2"><span>TUE</span><div class="dow-indicator"></div></div>
-    <div class="dow-cell off" data-dow="3"><span>WED</span><div class="dow-indicator"></div></div>
-    <div class="dow-cell off" data-dow="4"><span>THU</span><div class="dow-indicator"></div></div>
-    <div class="dow-cell off" data-dow="5"><span>FRI</span><div class="dow-indicator"></div></div>
-    <div class="dow-cell off" data-dow="6"><span>SAT</span><div class="dow-indicator"></div></div>
-    <div class="dow-cell off today-marker" data-dow="0"><span>SUN</span><div class="dow-indicator" style="background:var(--yellow)"></div></div>
-  </div>
-
-  <!-- Tiles -->
-  <div class="tiles-row anim anim-4">
-    <div class="tile">
-      <div class="tile-label">Next cleaning</div>
-      <div class="tile-value" id="tileDate">—</div>
-      <div class="tile-sub" id="tileSide"> </div>
-    </div>
-    <div class="tile">
-      <div class="tile-label">Time</div>
-      <div class="tile-value" id="tileTime">—</div>
-      <div class="tile-sub" id="tileDur"> </div>
-    </div>
-  </div>
-
-  <!-- Move reminder -->
-  <div class="move-banner" id="moveBanner" style="display:none">
-    <div class="move-banner-icon" id="moveBannerIcon"></div>
-    <div class="move-banner-text" id="moveBannerText"></div>
-  </div>
-
-  <!-- Weekly schedule -->
-  <div class="sign-section anim anim-5" id="scheduleSection">
-    <div class="sign-head">
-      📋 Weekly Schedule
-      <span class="sign-head-count" id="streetNameHead">Enter a street</span>
-    </div>
-    <div class="sign-body">
-      <div class="side-picker" id="sidePicker" style="display:none"></div>
-      <div id="scheduleBody">
-        <div class="empty-msg">Search for a street to see its alternate side parking schedule.</div>
+    <!-- Status plate -->
+    <div class="status-plate anim anim-2">
+      <div class="plate-body" id="plateBg">
+        <div class="plate-eyebrow" id="plateEyebrow"></div>
+        <div class="plate-icon" id="plateIcon">🔍</div>
+        <div class="plate-text">
+          <div class="plate-heading" id="plateHeading">Look up a street</div>
+          <div class="plate-detail" id="plateDetail">Enter a street or address above to check its schedule</div>
+        </div>
+        <div class="plate-badge" id="plateBadge">NYC</div>
       </div>
     </div>
-  </div>
 
-  <!-- Map -->
-  <div class="sign-section anim anim-6" id="mapSection">
-    <div class="sign-head">📍 Location</div>
-    <div class="sign-body">
-      <div id="mapContainer"></div>
-      <div class="map-footer-row">
-        <span class="map-footer-text" id="mapFooterText">New York City</span>
-        <a class="map-footer-link" id="mapFooterLink" href="#" target="_blank" rel="noopener">Open in Maps ↗</a>
+    <!-- Next suspension strip -->
+    <div class="susp-strip anim anim-3">
+      <div class="susp-strip-bullet"></div>
+      <div class="susp-strip-text" id="suspStripText">Loading suspension calendar…</div>
+      <div class="susp-strip-count" id="suspStripCount"></div>
+    </div>
+
+    <!-- DOW grid -->
+    <div class="dow-grid anim anim-3" id="dowGrid">
+      <div class="dow-cell off" data-dow="1"><span>MON</span><div class="dow-indicator"></div></div>
+      <div class="dow-cell off" data-dow="2"><span>TUE</span><div class="dow-indicator"></div></div>
+      <div class="dow-cell off" data-dow="3"><span>WED</span><div class="dow-indicator"></div></div>
+      <div class="dow-cell off" data-dow="4"><span>THU</span><div class="dow-indicator"></div></div>
+      <div class="dow-cell off" data-dow="5"><span>FRI</span><div class="dow-indicator"></div></div>
+      <div class="dow-cell off" data-dow="6"><span>SAT</span><div class="dow-indicator"></div></div>
+      <div class="dow-cell off today-marker" data-dow="0"><span>SUN</span><div class="dow-indicator" style="background:var(--yellow)"></div></div>
+    </div>
+
+    <!-- Tiles -->
+    <div class="tiles-row anim anim-4">
+      <div class="tile">
+        <div class="tile-label">Next cleaning</div>
+        <div class="tile-value" id="tileDate">—</div>
+        <div class="tile-sub" id="tileSide"> </div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">Time</div>
+        <div class="tile-value" id="tileTime">—</div>
+        <div class="tile-sub" id="tileDur"> </div>
       </div>
     </div>
-  </div>
+
+    <!-- Move reminder -->
+    <div class="move-banner" id="moveBanner" style="display:none">
+      <div class="move-banner-icon" id="moveBannerIcon"></div>
+      <div class="move-banner-text" id="moveBannerText"></div>
+    </div>
+
+  </div><!-- /.col-left -->
+
+  <div class="col-right">
+
+    <!-- Map -->
+    <div class="sign-section anim anim-5" id="mapSection">
+      <div class="sign-head">📍 Location</div>
+      <div class="sign-body">
+        <div id="mapContainer"></div>
+        <div class="map-footer-row">
+          <span class="map-footer-text" id="mapFooterText">New York City</span>
+          <a class="map-footer-link" id="mapFooterLink" href="#" target="_blank" rel="noopener">Open in Maps ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly schedule -->
+    <div class="sign-section anim anim-6" id="scheduleSection">
+      <div class="sign-head">
+        📋 Weekly Schedule
+        <span class="sign-head-count" id="streetNameHead">Enter a street</span>
+      </div>
+      <div class="sign-body">
+        <div class="side-picker" id="sidePicker" style="display:none"></div>
+        <div id="scheduleBody">
+          <div class="empty-msg">Search for a street to see its alternate side parking schedule.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.col-right -->
 
   <!-- Suspension calendar -->
   <div class="sign-section anim anim-7" id="calendar">
@@ -792,7 +814,8 @@ async function requestGPS() {
     return;
   }
 
-  btn.textContent = '⏳';
+  const gpsIconHtml = btn.innerHTML;
+  btn.innerHTML = '⏳';
   btn.disabled = true;
   try {
     const pos = await new Promise((resolve, reject) =>
@@ -817,7 +840,7 @@ async function requestGPS() {
     errEl.textContent = msg;
     errEl.style.display = 'block';
   } finally {
-    btn.textContent = '📍';
+    btn.innerHTML = gpsIconHtml;
     btn.disabled = false;
   }
 }
