@@ -2,7 +2,7 @@
 
 Mobile-first website to check NYC alternate side parking rules by street.
 
-**Live site:** https://nathanielostrer.com/alternate-side-parking/
+**Live site:** https://asp.nathaniel.nyc/
 
 ## What it does
 
